@@ -75,93 +75,32 @@
     color: #e6e1d3;
   }
 
-  #addBtn {
-    position: fixed; bottom: 26px; right: 26px;
-    background: #5c7a52;
-    color: #fff;
-    border: none;
-    border-radius: 999px;
-    padding: 14px 22px;
+  #loadingBar {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    height: 3px; background: rgba(0,0,0,0.06);
+    z-index: 40; overflow: hidden;
+  }
+  #loadingFill {
+    height: 100%; width: 0%; background: #5c7a52;
+    transition: width 0.25s ease;
+  }
+  #loadingLabel {
+    position: fixed; bottom: 10px; left: 26px;
+    font-size: 12px; color: #7a766c; z-index: 40;
     font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 6px 20px rgba(92,122,82,0.3);
-    z-index: 20;
-    transition: transform 0.15s ease, background 0.4s ease;
   }
-  #addBtn:hover { transform: translateY(-2px); }
-  body.night #addBtn { background: #c9a86a; box-shadow: 0 6px 20px rgba(201,168,106,0.3); }
+  body.night #loadingLabel { color: #a89f8c; }
 
-  #panel {
-    position: fixed; bottom: 0; right: 0;
-    width: 340px; max-width: 92vw;
-    height: 100%;
-    background: rgba(255,255,255,0.98);
-    border-left: 1px solid rgba(0,0,0,0.06);
-    backdrop-filter: blur(10px);
-    transform: translateX(100%);
-    transition: transform 0.28s ease, background 0.6s ease;
-    z-index: 30;
-    padding: 28px 24px;
-    overflow-y: auto;
+  #errorBox {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+    background: #fff; border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 10px; padding: 14px 20px; max-width: 420px;
+    font-size: 13px; color: #7a3b3b; z-index: 50; display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   }
-  body.night #panel { background: rgba(20,19,26,0.98); border-left-color: rgba(255,255,255,0.08); }
-  #panel.open { transform: translateX(0); }
-  #panel h2 {
-    font-family: 'Fraunces', serif;
-    color: #2b2a28;
-    font-size: 20px;
-    margin: 0 0 4px;
-    transition: color 0.6s ease;
-  }
-  body.night #panel h2 { color: #f0ede4; }
-  #panel p.sub {
-    color: #8a867a; font-size: 12.5px; margin: 0 0 22px; line-height: 1.5;
-  }
-  label {
-    display: block; color: #5c7a52; font-size: 11px;
-    text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 6px;
-  }
-  body.night label { color: #c9a86a; }
-  input[type=text] {
-    width: 100%; background: rgba(0,0,0,0.03);
-    border: 1px solid rgba(0,0,0,0.12);
-    border-radius: 8px; padding: 10px 12px;
-    color: #2b2a28; font-size: 14px; font-family: 'Inter', sans-serif;
-  }
-  body.night input[type=text] {
-    background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #f0ede4;
-  }
-  input[type=text]:focus { outline: none; border-color: #5c7a52; }
-  #submitBook {
-    margin-top: 22px; width: 100%;
-    background: #5c7a52; color: #fff;
-    border: none; border-radius: 8px;
-    padding: 12px; font-weight: 600; font-size: 14px;
-    cursor: pointer;
-  }
-  body.night #submitBook { background: #c9a86a; color: #1a1812; }
-  #submitBook:disabled { opacity: 0.5; cursor: default; }
-  #status { margin-top: 12px; font-size: 12.5px; color: #8a867a; min-height: 18px; }
-  #closePanel {
-    position: absolute; top: 22px; right: 22px;
-    background: none; border: none; color: #8a867a;
-    font-size: 20px; cursor: pointer; line-height: 1;
-  }
-  #shelfList { margin-top: 26px; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 16px; }
-  body.night #shelfList { border-top-color: rgba(255,255,255,0.1); }
-  .shelfItem {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0; font-size: 13px; color: #4a4842;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-  }
-  body.night .shelfItem { color: #d8d3c4; border-bottom-color: rgba(255,255,255,0.06); }
-  .shelfItem button {
-    background: none; border: none; color: #a89f8c; cursor: pointer; font-size: 12px;
-  }
+
   #hint {
-    position: fixed; bottom: 26px; left: 26px;
+    position: fixed; bottom: 26px; right: 26px;
     color: #9a9688; font-size: 12px; z-index: 10; pointer-events: none;
     transition: color 0.6s ease;
   }
@@ -179,50 +118,23 @@
 </div>
 
 <div id="hint">Drag to look around · Scroll to zoom</div>
-
-<button id="addBtn">+ Add a Book</button>
-
-<div id="panel">
-  <button id="closePanel">×</button>
-  <h2>Add a book</h2>
-  <p class="sub">Type the title (and author if you know it). We'll try to find the cover automatically.</p>
-
-  <label>Title</label>
-  <input type="text" id="inputTitle" placeholder="e.g. The Left Hand of Darkness" />
-
-  <label>Author (optional, helps accuracy)</label>
-  <input type="text" id="inputAuthor" placeholder="e.g. Ursula K. Le Guin" />
-
-  <button id="submitBook">Find cover & add to shelf</button>
-  <div id="status"></div>
-
-  <div id="shelfList"></div>
-</div>
+<div id="errorBox"></div>
+<div id="loadingLabel"></div>
+<div id="loadingBar"><div id="loadingFill"></div></div>
 
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-// ---------- Storage ----------
-const STORAGE_KEY = 'theshelf_books_v1';
-function loadBooks() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch(e) { return []; }
-}
-function saveBooks(books) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
-}
-let books = loadBooks();
-
 // ---------- Palette ----------
 const DAY = {
-  bg: 0xe9e6df, fog: 0xe9e6df, fogDensity: 0.012,
+  bg: 0xe9e6df, fog: 0xe9e6df, fogDensity: 0.010,
   floor: 0xd9d5cb, wall: 0xf3f1ea,
   shelf: 0xf7f5ef, ambient: 0xffffff, ambientI: 1.15,
   key: 0xfff3de, keyI: 1.6,
   rim: 0xcfe0c8, rimI: 0.25
 };
 const NIGHT = {
-  bg: 0x14131a, fog: 0x14131a, fogDensity: 0.024,
+  bg: 0x14131a, fog: 0x14131a, fogDensity: 0.020,
   floor: 0x1c1a22, wall: 0x201e26,
   shelf: 0x26232c, ambient: 0x2a2836, ambientI: 0.35,
   key: 0xffcf9e, keyI: 1.0,
@@ -235,8 +147,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(DAY.bg);
 scene.fog = new THREE.FogExp2(DAY.fog, DAY.fogDensity);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 200);
-camera.position.set(0, 2.2, 8);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 300);
+camera.position.set(0, 2.4, 10);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -247,25 +159,25 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.minDistance = 2;
-controls.maxDistance = 18;
+controls.maxDistance = 40;
 controls.maxPolarAngle = Math.PI * 0.52;
-controls.target.set(0, 1.6, 0);
+controls.target.set(0, 2, 0);
 
 // lighting
 const ambientLight = new THREE.AmbientLight(DAY.ambient, DAY.ambientI);
 scene.add(ambientLight);
-const key = new THREE.SpotLight(DAY.key, DAY.keyI, 30, Math.PI/4, 0.6, 1.2);
-key.position.set(3, 9, 5);
-key.target.position.set(0, 1.5, 0);
+const key = new THREE.SpotLight(DAY.key, DAY.keyI, 40, Math.PI/4, 0.6, 1.2);
+key.position.set(3, 12, 6);
+key.target.position.set(0, 3, 0);
 scene.add(key, key.target);
-const rim = new THREE.PointLight(DAY.rim, DAY.rimI, 20);
-rim.position.set(-6, 3, -4);
+const rim = new THREE.PointLight(DAY.rim, DAY.rimI, 25);
+rim.position.set(-8, 4, -4);
 scene.add(rim);
 
 // back wall
 const wallMat = new THREE.MeshStandardMaterial({ color: DAY.wall, roughness: 0.95 });
-const wall = new THREE.Mesh(new THREE.PlaneGeometry(30, 20), wallMat);
-wall.position.set(0, 8, -2.2);
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), wallMat);
+wall.position.set(0, 10, -2.2);
 scene.add(wall);
 
 // floor: light tile look via canvas texture
@@ -284,17 +196,16 @@ function makeTileTexture(dark) {
   }
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(6,6);
+  tex.repeat.set(14,14);
   return tex;
 }
 const floorTexDay = makeTileTexture(false);
 const floorTexNight = makeTileTexture(true);
 const floorMat = new THREE.MeshStandardMaterial({ map: floorTexDay, roughness: 0.9 });
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMat);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), floorMat);
 floor.rotation.x = -Math.PI/2;
 scene.add(floor);
 
-// ---------- simple potted plant decoration ----------
 function makePlant(x, z, scale=1) {
   const group = new THREE.Group();
   const pot = new THREE.Mesh(
@@ -323,6 +234,7 @@ scene.add(shelfGroup);
 
 const SHELF_WIDTH = 8;
 const SHELF_GAP_Y = 1.55;
+const PER_ROW = 19;
 const shelfMat = new THREE.MeshStandardMaterial({ color: DAY.shelf, roughness: 0.55 });
 
 function buildShelfBoards(rows) {
@@ -341,7 +253,6 @@ function buildShelfBoards(rows) {
 const textureLoader = new THREE.TextureLoader();
 textureLoader.crossOrigin = 'anonymous';
 
-// varied, colorful default spine tones (eclectic collection look)
 const FALLBACK_TONES = [0xd8555c, 0x4a7a8c, 0xe0b84c, 0x6f9a5c, 0x8a6fa8, 0xd98f4c, 0x3f5c76, 0xc76b7a];
 
 function avgColorFromImage(img) {
@@ -374,8 +285,8 @@ function makeBookMesh(book, index, row, col) {
   mesh.userData.book = book;
   shelfGroup.add(mesh);
 
-  if (book.thumbnail) {
-    textureLoader.load(book.thumbnail, (tex) => {
+  if (book.cover) {
+    textureLoader.load(book.cover, (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
       const coverMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
       mesh.material[0] = coverMat;
@@ -390,62 +301,37 @@ function makeBookMesh(book, index, row, col) {
         }
         mesh.material.needsUpdate = true;
       };
-      img.src = book.thumbnail;
+      img.src = book.cover;
     });
   }
   return mesh;
 }
 
-function rebuildShelf() {
+function buildShelfFromBooks(books) {
   while (shelfGroup.children.length) shelfGroup.remove(shelfGroup.children[0]);
-  const perRow = 19;
-  const rows = Math.max(1, Math.ceil(books.length / perRow));
+  const rows = Math.max(1, Math.ceil(books.length / PER_ROW));
   buildShelfBoards(rows);
   books.forEach((book, i) => {
-    const row = Math.floor(i / perRow);
-    const col = i % perRow;
+    const row = Math.floor(i / PER_ROW);
+    const col = i % PER_ROW;
     makeBookMesh(book, i, row, col);
   });
   document.getElementById('countNum').textContent = books.length;
-  renderShelfList();
 }
 
-function renderShelfList() {
-  const list = document.getElementById('shelfList');
-  list.innerHTML = '';
-  books.slice().reverse().forEach((b) => {
-    const realIndex = books.indexOf(b);
-    const row = document.createElement('div');
-    row.className = 'shelfItem';
-    row.innerHTML = `<span>${b.title}${b.author ? ' — ' + b.author : ''}</span>`;
-    const del = document.createElement('button');
-    del.textContent = 'remove';
-    del.onclick = () => {
-      books.splice(realIndex, 1);
-      saveBooks(books);
-      rebuildShelf();
-    };
-    row.appendChild(del);
-    list.appendChild(row);
-  });
-}
-
-makePlant(-3.6, -1.2, 1.3);
-makePlant(3.5, -1.6, 0.9);
-rebuildShelf();
+makePlant(-4.4, -1.4, 1.4);
+makePlant(4.3, -1.8, 1.0);
 
 // ---------- Day/Night toggle ----------
 function lerpColor(hexA, hexB, t) {
   const a = new THREE.Color(hexA), b = new THREE.Color(hexB);
   return a.clone().lerp(b, t);
 }
-
 function applyMode(night) {
   const from = night ? DAY : NIGHT;
   const to = night ? NIGHT : DAY;
   const duration = 700;
   const start = performance.now();
-
   function step(now) {
     const t = Math.min(1, (now - start) / duration);
     scene.background = lerpColor(from.bg, to.bg, t);
@@ -468,7 +354,6 @@ function applyMode(night) {
   document.getElementById('dimLabel').textContent = night ? 'Brighten up' : 'Dim the lights';
   document.getElementById('dimToggle').firstChild.textContent = night ? '☀️ ' : '🌙 ';
 }
-
 document.getElementById('dimToggle').onclick = () => {
   isNight = !isNight;
   applyMode(isNight);
@@ -488,44 +373,110 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ---------- UI wiring ----------
-const panel = document.getElementById('panel');
-document.getElementById('addBtn').onclick = () => panel.classList.add('open');
-document.getElementById('closePanel').onclick = () => panel.classList.remove('open');
+// ---------- Notion + Google Books sync ----------
+const CACHE_KEY = 'theshelf_cover_cache_v1';
+function loadCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveCache(cache) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch(e) {}
+}
+const coverCache = loadCache();
 
-const statusEl = document.getElementById('status');
-const submitBtn = document.getElementById('submitBook');
+function cacheKey(title, author) {
+  return (title + '|' + (author||'')).toLowerCase().trim();
+}
 
-submitBtn.onclick = async () => {
-  const title = document.getElementById('inputTitle').value.trim();
-  const author = document.getElementById('inputAuthor').value.trim();
-  if (!title) { statusEl.textContent = 'Please enter a title.'; return; }
-
-  submitBtn.disabled = true;
-  statusEl.textContent = 'Searching for cover…';
-
-  let thumbnail = null;
+async function fetchGoogleBooksInfo(title, author) {
+  const key = cacheKey(title, author);
+  if (coverCache[key]) return coverCache[key];
   try {
     const q = encodeURIComponent(author ? `intitle:${title} inauthor:${author}` : title);
     const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
     const data = await res.json();
     const item = data.items && data.items[0];
-    thumbnail = item?.volumeInfo?.imageLinks?.thumbnail?.replace('http://','https://') || null;
-    if (!thumbnail) statusEl.textContent = 'No cover found — adding with a colored spine.';
-    else statusEl.textContent = 'Cover found. Adding to shelf…';
+    const cover = item?.volumeInfo?.imageLinks?.thumbnail?.replace('http://','https://') || null;
+    const ids = item?.volumeInfo?.industryIdentifiers || [];
+    const isbn13 = ids.find(i => i.type === 'ISBN_13')?.identifier || '';
+    const result = { cover, isbn: isbn13 };
+    coverCache[key] = result;
+    return result;
   } catch (e) {
-    statusEl.textContent = 'Lookup failed — adding with a colored spine.';
+    return { cover: null, isbn: '' };
+  }
+}
+
+async function runWithConcurrency(items, limit, worker) {
+  let i = 0;
+  let completed = 0;
+  const results = new Array(items.length);
+  async function next() {
+    while (i < items.length) {
+      const idx = i++;
+      results[idx] = await worker(items[idx], idx);
+      completed++;
+      updateProgress(completed, items.length);
+    }
+  }
+  const runners = Array.from({length: limit}, next);
+  await Promise.all(runners);
+  return results;
+}
+
+function updateProgress(done, total) {
+  const pct = total ? Math.round((done/total)*100) : 0;
+  document.getElementById('loadingFill').style.width = pct + '%';
+  document.getElementById('loadingLabel').textContent = `Loading covers… ${done}/${total}`;
+  if (done >= total) {
+    setTimeout(() => {
+      document.getElementById('loadingLabel').textContent = '';
+      document.getElementById('loadingFill').style.width = '0%';
+    }, 1200);
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.style.display = 'block';
+}
+
+async function loadLibrary() {
+  document.getElementById('loadingLabel').textContent = 'Fetching your catalog from Notion…';
+  let notionBooks = [];
+  try {
+    const res = await fetch('/api/books');
+    const data = await res.json();
+    if (!res.ok) {
+      showError('Could not load from Notion: ' + (data.error?.message || JSON.stringify(data.error) || 'unknown error'));
+      return;
+    }
+    notionBooks = data.books || [];
+  } catch (e) {
+    showError('Could not reach /api/books. Is this running on Vercel with the environment variables set?');
+    return;
   }
 
-  books.push({ title, author, thumbnail });
-  saveBooks(books);
-  rebuildShelf();
+  document.getElementById('countNum').textContent = notionBooks.length;
 
-  document.getElementById('inputTitle').value = '';
-  document.getElementById('inputAuthor').value = '';
-  submitBtn.disabled = false;
-  setTimeout(() => statusEl.textContent = '', 2000);
-};
+  const enriched = await runWithConcurrency(notionBooks, 4, async (b) => {
+    const info = await fetchGoogleBooksInfo(b.title, b.author);
+    return {
+      title: b.title,
+      author: b.author,
+      genre: b.genre,
+      language: b.language,
+      isbn: info.isbn || b.notionISBN || '',
+      cover: info.cover
+    };
+  });
+
+  saveCache(coverCache);
+  buildShelfFromBooks(enriched);
+}
+
+loadLibrary();
 </script>
 </body>
 </html>
