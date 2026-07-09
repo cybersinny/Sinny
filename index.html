@@ -280,7 +280,6 @@ function makeBookMesh(book, index) {
       tex.encoding = THREE.sRGBEncoding;
       const coverMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
       mesh.material[0] = coverMat;
-      mesh.material[4] = coverMat.clone();
       mesh.material.needsUpdate = true;
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -395,7 +394,7 @@ function selectBook(mesh) {
   if (currentInspect) returnBook(currentInspect);
   currentInspect = mesh;
   const inspectPos = new THREE.Vector3(camera.position.x, 2.15, 5.2);
-  startTween(mesh, inspectPos, mesh.userData.baseRotY, 1.9, 700);
+  startTween(mesh, inspectPos, -Math.PI/2, 1.9, 700);
   openDetail(mesh.userData.book);
 }
 function returnBook(mesh) {
