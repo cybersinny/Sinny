@@ -1,7 +1,3 @@
-
-bash
-
-cat > /home/claude/bookshelf/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -484,11 +480,3 @@ loadLibrary();
 </script>
 </body>
 </html>
-HTMLEOF
-cp /home/claude/bookshelf/index.html /mnt/user-data/outputs/index.html
-cp /home/claude/bookshelf/api/books.js /mnt/user-data/outputs/books.js
-echo done
-Output
-
-done
-
