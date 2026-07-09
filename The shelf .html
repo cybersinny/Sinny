@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Shelf</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: #e9e6df;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    transition: background 0.6s ease;
+  }
+  body.night { background: #14131a; }
+  canvas { display: block; }
+
+  #hud {
+    position: fixed; top: 0; left: 0; width: 100%;
+    padding: 22px 28px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #2b2a28;
+    letter-spacing: 0.3px;
+    transition: color 0.6s ease;
+  }
+  body.night #title { color: #f0ede4; }
+  #title span {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    color: #8a9c7e;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  #count {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #7a766c;
+    text-align: right;
+    pointer-events: none;
+  }
+  #count b { color: #5c7a52; font-weight: 600; }
+  body.night #count b { color: #c9a86a; }
+
+  #topRight { display: flex; align-items: center; gap: 14px; pointer-events: auto; }
+
+  #dimToggle {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4a4842;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.3s ease;
+  }
+  body.night #dimToggle {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.15);
+    color: #e6e1d3;
+  }
+
+  #addBtn {
+    position: fixed; bottom: 26px; right: 26px;
+    background: #5c7a52;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 14px 22px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(92,122,82,0.3);
+    z-index: 20;
+    transition: transform 0.15s ease, background 0.4s ease;
+  }
+  #addBtn:hover { transform: translateY(-2px); }
+  body.night #addBtn { background: #c9a86a; box-shadow: 0 6px 20px rgba(201,168,106,0.3); }
+
+  #panel {
+    position: fixed; bottom: 0; right: 0;
+    width: 340px; max-width: 92vw;
+    height: 100%;
+    background: rgba(255,255,255,0.98);
+    border-left: 1px solid rgba(0,0,0,0.06);
+    backdrop-filter: blur(10px);
+    transform: translateX(100%);
+    transition: transform 0.28s ease, background 0.6s ease;
+    z-index: 30;
+    padding: 28px 24px;
+    overflow-y: auto;
+  }
+  body.night #panel { background: rgba(20,19,26,0.98); border-left-color: rgba(255,255,255,0.08); }
+  #panel.open { transform: translateX(0); }
+  #panel h2 {
+    font-family: 'Fraunces', serif;
+    color: #2b2a28;
+    font-size: 20px;
+    margin: 0 0 4px;
+    transition: color 0.6s ease;
+  }
+  body.night #panel h2 { color: #f0ede4; }
+  #panel p.sub {
+    color: #8a867a; font-size: 12.5px; margin: 0 0 22px; line-height: 1.5;
+  }
+  label {
+    display: block; color: #5c7a52; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 6px;
+  }
+  body.night label { color: #c9a86a; }
+  input[type=text] {
+    width: 100%; background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 8px; padding: 10px 12px;
+    color: #2b2a28; font-size: 14px; font-family: 'Inter', sans-serif;
+  }
+  body.night input[type=text] {
+    background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #f0ede4;
+  }
+  input[type=text]:focus { outline: none; border-color: #5c7a52; }
+  #submitBook {
+    margin-top: 22px; width: 100%;
+    background: #5c7a52; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 12px; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  body.night #submitBook { background: #c9a86a; color: #1a1812; }
+  #submitBook:disabled { opacity: 0.5; cursor: default; }
+  #status { margin-top: 12px; font-size: 12.5px; color: #8a867a; min-height: 18px; }
+  #closePanel {
+    position: absolute; top: 22px; right: 22px;
+    background: none; border: none; color: #8a867a;
+    font-size: 20px; cursor: pointer; line-height: 1;
+  }
+  #shelfList { margin-top: 26px; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 16px; }
+  body.night #shelfList { border-top-color: rgba(255,255,255,0.1); }
+  .shelfItem {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; font-size: 13px; color: #4a4842;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  body.night .shelfItem { color: #d8d3c4; border-bottom-color: rgba(255,255,255,0.06); }
+  .shelfItem button {
+    background: none; border: none; color: #a89f8c; cursor: pointer; font-size: 12px;
+  }
+  #hint {
+    position: fixed; bottom: 26px; left: 26px;
+    color: #9a9688; font-size: 12px; z-index: 10; pointer-events: none;
+    transition: color 0.6s ease;
+  }
+  body.night #hint { color: #6a6658; }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="title">The Shelf<span>a walk-in catalog</span></div>
+  <div id="topRight">
+    <button id="dimToggle">🌙 <span id="dimLabel">Dim the lights</span></button>
+    <div id="count"><b id="countNum">0</b> books</div>
+  </div>
+</div>
+
+<div id="hint">Drag to look around · Scroll to zoom</div>
+
+<button id="addBtn">+ Add a Book</button>
+
+<div id="panel">
+  <button id="closePanel">×</button>
+  <h2>Add a book</h2>
+  <p class="sub">Type the title (and author if you know it). We'll try to find the cover automatically.</p>
+
+  <label>Title</label>
+  <input type="text" id="inputTitle" placeholder="e.g. The Left Hand of Darkness" />
+
+  <label>Author (optional, helps accuracy)</label>
+  <input type="text" id="inputAuthor" placeholder="e.g. Ursula K. Le Guin" />
+
+  <button id="submitBook">Find cover & add to shelf</button>
+  <div id="status"></div>
+
+  <div id="shelfList"></div>
+</div>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ---------- Storage ----------
+const STORAGE_KEY = 'theshelf_books_v1';
+function loadBooks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e) { return []; }
+}
+function saveBooks(books) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+}
+let books = loadBooks();
+
+// ---------- Palette ----------
+const DAY = {
+  bg: 0xe9e6df, fog: 0xe9e6df, fogDensity: 0.012,
+  floor: 0xd9d5cb, wall: 0xf3f1ea,
+  shelf: 0xf7f5ef, ambient: 0xffffff, ambientI: 1.15,
+  key: 0xfff3de, keyI: 1.6,
+  rim: 0xcfe0c8, rimI: 0.25
+};
+const NIGHT = {
+  bg: 0x14131a, fog: 0x14131a, fogDensity: 0.024,
+  floor: 0x1c1a22, wall: 0x201e26,
+  shelf: 0x26232c, ambient: 0x2a2836, ambientI: 0.35,
+  key: 0xffcf9e, keyI: 1.0,
+  rim: 0x7a5cff, rimI: 0.5
+};
+let isNight = false;
+
+// ---------- Three.js setup ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(DAY.bg);
+scene.fog = new THREE.FogExp2(DAY.fog, DAY.fogDensity);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 200);
+camera.position.set(0, 2.2, 8);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 2;
+controls.maxDistance = 18;
+controls.maxPolarAngle = Math.PI * 0.52;
+controls.target.set(0, 1.6, 0);
+
+// lighting
+const ambientLight = new THREE.AmbientLight(DAY.ambient, DAY.ambientI);
+scene.add(ambientLight);
+const key = new THREE.SpotLight(DAY.key, DAY.keyI, 30, Math.PI/4, 0.6, 1.2);
+key.position.set(3, 9, 5);
+key.target.position.set(0, 1.5, 0);
+scene.add(key, key.target);
+const rim = new THREE.PointLight(DAY.rim, DAY.rimI, 20);
+rim.position.set(-6, 3, -4);
+scene.add(rim);
+
+// back wall
+const wallMat = new THREE.MeshStandardMaterial({ color: DAY.wall, roughness: 0.95 });
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(30, 20), wallMat);
+wall.position.set(0, 8, -2.2);
+scene.add(wall);
+
+// floor: light tile look via canvas texture
+function makeTileTexture(dark) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = dark ? '#1c1a22' : '#e4e0d5';
+  ctx.fillRect(0,0,512,512);
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
+  ctx.lineWidth = 3;
+  const step = 512/6;
+  for (let i=0; i<=6; i++){
+    ctx.beginPath(); ctx.moveTo(i*step,0); ctx.lineTo(i*step,512); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,i*step); ctx.lineTo(512,i*step); ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(6,6);
+  return tex;
+}
+const floorTexDay = makeTileTexture(false);
+const floorTexNight = makeTileTexture(true);
+const floorMat = new THREE.MeshStandardMaterial({ map: floorTexDay, roughness: 0.9 });
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMat);
+floor.rotation.x = -Math.PI/2;
+scene.add(floor);
+
+// ---------- simple potted plant decoration ----------
+function makePlant(x, z, scale=1) {
+  const group = new THREE.Group();
+  const pot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16*scale, 0.13*scale, 0.22*scale, 12),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 })
+  );
+  pot.position.y = 0.11*scale;
+  group.add(pot);
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x6f9a5c, roughness: 0.8 });
+  for (let i=0;i<6;i++) {
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05*scale, 0.32*scale, 5), leafMat);
+    const ang = (i/6) * Math.PI * 2;
+    leaf.position.set(Math.cos(ang)*0.06*scale, 0.32*scale, Math.sin(ang)*0.06*scale);
+    leaf.rotation.z = Math.cos(ang) * 0.4;
+    leaf.rotation.x = -Math.sin(ang) * 0.4;
+    group.add(leaf);
+  }
+  group.position.set(x, 0, z);
+  scene.add(group);
+  return group;
+}
+
+// shelf group
+const shelfGroup = new THREE.Group();
+scene.add(shelfGroup);
+
+const SHELF_WIDTH = 8;
+const SHELF_GAP_Y = 1.55;
+const shelfMat = new THREE.MeshStandardMaterial({ color: DAY.shelf, roughness: 0.55 });
+
+function buildShelfBoards(rows) {
+  for (let r = 0; r <= rows; r++) {
+    const board = new THREE.Mesh(new THREE.BoxGeometry(SHELF_WIDTH + 0.3, 0.08, 0.9), shelfMat);
+    board.position.set(0, 0.6 + r * SHELF_GAP_Y, 0);
+    shelfGroup.add(board);
+  }
+  [-1, 1].forEach(sign => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, rows * SHELF_GAP_Y + 0.6, 0.9), shelfMat);
+    post.position.set(sign * (SHELF_WIDTH/2 + 0.15), 0.6 + (rows * SHELF_GAP_Y)/2, 0);
+    shelfGroup.add(post);
+  });
+}
+
+const textureLoader = new THREE.TextureLoader();
+textureLoader.crossOrigin = 'anonymous';
+
+// varied, colorful default spine tones (eclectic collection look)
+const FALLBACK_TONES = [0xd8555c, 0x4a7a8c, 0xe0b84c, 0x6f9a5c, 0x8a6fa8, 0xd98f4c, 0x3f5c76, 0xc76b7a];
+
+function avgColorFromImage(img) {
+  const c = document.createElement('canvas');
+  c.width = 8; c.height = 8;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0, 8, 8);
+  const data = ctx.getImageData(0,0,8,8).data;
+  let r=0,g=0,b=0,n=0;
+  for (let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; n++; }
+  return new THREE.Color(r/n/255, g/n/255, b/n/255);
+}
+
+function makeBookMesh(book, index, row, col) {
+  const w = 0.3 + (index % 3) * 0.03;
+  const h = 1.25 + (index % 2) * 0.1;
+  const d = 0.85;
+
+  const fallback = new THREE.Color(FALLBACK_TONES[index % FALLBACK_TONES.length]);
+  const spineMat = new THREE.MeshStandardMaterial({ color: fallback, roughness: 0.6 });
+  const mats = [spineMat.clone(), spineMat.clone(), spineMat.clone(), spineMat.clone(), spineMat.clone(), spineMat.clone()];
+
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mesh = new THREE.Mesh(geo, mats);
+
+  const x = -SHELF_WIDTH/2 + 0.35 + col * 0.37;
+  const y = 0.6 + row * SHELF_GAP_Y + h/2 + 0.06;
+  mesh.position.set(x, y, 0);
+  mesh.rotation.y = (Math.random() - 0.5) * 0.03;
+  mesh.userData.book = book;
+  shelfGroup.add(mesh);
+
+  if (book.thumbnail) {
+    textureLoader.load(book.thumbnail, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const coverMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
+      mesh.material[0] = coverMat;
+      mesh.material.needsUpdate = true;
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const col2 = avgColorFromImage(img);
+        for (let i=1;i<6;i++){
+          mesh.material[i] = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.6 });
+        }
+        mesh.material.needsUpdate = true;
+      };
+      img.src = book.thumbnail;
+    });
+  }
+  return mesh;
+}
+
+function rebuildShelf() {
+  while (shelfGroup.children.length) shelfGroup.remove(shelfGroup.children[0]);
+  const perRow = 19;
+  const rows = Math.max(1, Math.ceil(books.length / perRow));
+  buildShelfBoards(rows);
+  books.forEach((book, i) => {
+    const row = Math.floor(i / perRow);
+    const col = i % perRow;
+    makeBookMesh(book, i, row, col);
+  });
+  document.getElementById('countNum').textContent = books.length;
+  renderShelfList();
+}
+
+function renderShelfList() {
+  const list = document.getElementById('shelfList');
+  list.innerHTML = '';
+  books.slice().reverse().forEach((b) => {
+    const realIndex = books.indexOf(b);
+    const row = document.createElement('div');
+    row.className = 'shelfItem';
+    row.innerHTML = `<span>${b.title}${b.author ? ' — ' + b.author : ''}</span>`;
+    const del = document.createElement('button');
+    del.textContent = 'remove';
+    del.onclick = () => {
+      books.splice(realIndex, 1);
+      saveBooks(books);
+      rebuildShelf();
+    };
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+makePlant(-3.6, -1.2, 1.3);
+makePlant(3.5, -1.6, 0.9);
+rebuildShelf();
+
+// ---------- Day/Night toggle ----------
+function lerpColor(hexA, hexB, t) {
+  const a = new THREE.Color(hexA), b = new THREE.Color(hexB);
+  return a.clone().lerp(b, t);
+}
+
+function applyMode(night) {
+  const from = night ? DAY : NIGHT;
+  const to = night ? NIGHT : DAY;
+  const duration = 700;
+  const start = performance.now();
+
+  function step(now) {
+    const t = Math.min(1, (now - start) / duration);
+    scene.background = lerpColor(from.bg, to.bg, t);
+    scene.fog.color = lerpColor(from.fog, to.fog, t);
+    scene.fog.density = from.fogDensity + (to.fogDensity - from.fogDensity) * t;
+    ambientLight.color = lerpColor(from.ambient, to.ambient, t);
+    ambientLight.intensity = from.ambientI + (to.ambientI - from.ambientI) * t;
+    key.color = lerpColor(from.key, to.key, t);
+    key.intensity = from.keyI + (to.keyI - from.keyI) * t;
+    rim.color = lerpColor(from.rim, to.rim, t);
+    rim.intensity = from.rimI + (to.rimI - from.rimI) * t;
+    wallMat.color = lerpColor(from.wall, to.wall, t);
+    shelfMat.color = lerpColor(from.shelf, to.shelf, t);
+    floorMat.map = t > 0.5 ? (night ? floorTexNight : floorTexDay) : floorMat.map;
+    floorMat.needsUpdate = true;
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  document.body.classList.toggle('night', night);
+  document.getElementById('dimLabel').textContent = night ? 'Brighten up' : 'Dim the lights';
+  document.getElementById('dimToggle').firstChild.textContent = night ? '☀️ ' : '🌙 ';
+}
+
+document.getElementById('dimToggle').onclick = () => {
+  isNight = !isNight;
+  applyMode(isNight);
+};
+
+// ---------- Animation loop ----------
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ---------- UI wiring ----------
+const panel = document.getElementById('panel');
+document.getElementById('addBtn').onclick = () => panel.classList.add('open');
+document.getElementById('closePanel').onclick = () => panel.classList.remove('open');
+
+const statusEl = document.getElementById('status');
+const submitBtn = document.getElementById('submitBook');
+
+submitBtn.onclick = async () => {
+  const title = document.getElementById('inputTitle').value.trim();
+  const author = document.getElementById('inputAuthor').value.trim();
+  if (!title) { statusEl.textContent = 'Please enter a title.'; return; }
+
+  submitBtn.disabled = true;
+  statusEl.textContent = 'Searching for cover…';
+
+  let thumbnail = null;
+  try {
+    const q = encodeURIComponent(author ? `intitle:${title} inauthor:${author}` : title);
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
+    const data = await res.json();
+    const item = data.items && data.items[0];
+    thumbnail = item?.volumeInfo?.imageLinks?.thumbnail?.replace('http://','https://') || null;
+    if (!thumbnail) statusEl.textContent = 'No cover found — adding with a colored spine.';
+    else statusEl.textContent = 'Cover found. Adding to shelf…';
+  } catch (e) {
+    statusEl.textContent = 'Lookup failed — adding with a colored spine.';
+  }
+
+  books.push({ title, author, thumbnail });
+  saveBooks(books);
+  rebuildShelf();
+
+  document.getElementById('inputTitle').value = '';
+  document.getElementById('inputAuthor').value = '';
+  submitBtn.disabled = false;
+  setTimeout(() => statusEl.textContent = '', 2000);
+};
+</script>
+</body>
+</html>
