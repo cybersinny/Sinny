@@ -7,7 +7,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; padding: 0; width: 100%; height: 100%;
     background: #e9e6df;
@@ -20,7 +20,7 @@
 
   #hud {
     position: fixed; top: 0; left: 0; width: 100%;
-    padding: 22px 28px;
+    padding: 20px 24px;
     display: flex; justify-content: space-between; align-items: flex-start;
     pointer-events: none;
     z-index: 10;
@@ -28,9 +28,8 @@
   #title {
     font-family: 'Fraunces', serif;
     font-weight: 600;
-    font-size: 22px;
+    font-size: 20px;
     color: #2b2a28;
-    letter-spacing: 0.3px;
     transition: color 0.6s ease;
   }
   body.night #title { color: #f0ede4; }
@@ -38,26 +37,15 @@
     display: block;
     font-family: 'Inter', sans-serif;
     font-weight: 400;
-    font-size: 12px;
+    font-size: 11px;
     color: #8a9c7e;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-top: 2px;
   }
-  #count {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: #7a766c;
-    text-align: right;
-    pointer-events: none;
-  }
-  #count b { color: #5c7a52; font-weight: 600; }
-  body.night #count b { color: #c9a86a; }
-
-  #topRight { display: flex; align-items: center; gap: 14px; pointer-events: auto; }
-
-  #dimToggle {
-    background: rgba(255,255,255,0.7);
+  #topRight { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+  .pill {
+    background: rgba(255,255,255,0.75);
     border: 1px solid rgba(0,0,0,0.08);
     border-radius: 999px;
     padding: 8px 14px;
@@ -69,42 +57,90 @@
     display: flex; align-items: center; gap: 6px;
     transition: all 0.3s ease;
   }
-  body.night #dimToggle {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.15);
-    color: #e6e1d3;
-  }
+  body.night .pill { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
+  #count { font-size: 12px; color: #7a766c; pointer-events: none; align-self: center; }
+  body.night #count { color: #a89f8c; }
+  #count b { color: #5c7a52; }
+  body.night #count b { color: #c9a86a; }
 
-  #loadingBar {
-    position: fixed; bottom: 0; left: 0; width: 100%;
-    height: 3px; background: rgba(0,0,0,0.06);
-    z-index: 40; overflow: hidden;
+  #navArrows { position: fixed; top: 50%; width: 100%; display: flex; justify-content: space-between; padding: 0 16px; transform: translateY(-50%); z-index: 8; pointer-events: none; }
+  .navBtn {
+    pointer-events: auto;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.08);
+    font-size: 20px; color: #4a4842; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.3s ease;
   }
-  #loadingFill {
-    height: 100%; width: 0%; background: #5c7a52;
-    transition: width 0.25s ease;
-  }
-  #loadingLabel {
-    position: fixed; bottom: 10px; left: 26px;
-    font-size: 12px; color: #7a766c; z-index: 40;
-    font-family: 'Inter', sans-serif;
-  }
+  body.night .navBtn { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
+
+  #hint { position: fixed; bottom: 24px; right: 24px; color: #9a9688; font-size: 12px; z-index: 6; pointer-events: none; }
+  body.night #hint { color: #6a6658; }
+
+  #loadingBar { position: fixed; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(0,0,0,0.06); z-index: 40; overflow: hidden; }
+  #loadingFill { height: 100%; width: 0%; background: #5c7a52; transition: width 0.25s ease; }
+  #loadingLabel { position: fixed; bottom: 10px; left: 24px; font-size: 12px; color: #7a766c; z-index: 40; }
   body.night #loadingLabel { color: #a89f8c; }
 
   #errorBox {
-    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
-    background: #fff; border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 10px; padding: 14px 20px; max-width: 420px;
-    font-size: 13px; color: #7a3b3b; z-index: 50; display: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    position: fixed; top: 76px; left: 50%; transform: translateX(-50%);
+    background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px;
+    padding: 14px 20px; max-width: 420px; font-size: 13px; color: #7a3b3b;
+    z-index: 50; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   }
 
-  #hint {
-    position: fixed; bottom: 26px; right: 26px;
-    color: #9a9688; font-size: 12px; z-index: 10; pointer-events: none;
-    transition: color 0.6s ease;
+  /* Detail panel */
+  #detail {
+    position: fixed; left: 0; bottom: 0; width: 100%;
+    background: rgba(255,255,255,0.98);
+    border-top: 1px solid rgba(0,0,0,0.08);
+    transform: translateY(110%);
+    transition: transform 0.32s ease;
+    z-index: 60; padding: 22px 24px 26px;
+    max-height: 62vh; overflow-y: auto;
   }
-  body.night #hint { color: #6a6658; }
+  body.night #detail { background: rgba(20,19,26,0.98); border-top-color: rgba(255,255,255,0.1); }
+  #detail.open { transform: translateY(0); }
+  #detailInner { display: flex; gap: 18px; max-width: 640px; margin: 0 auto; }
+  #detailCover { width: 96px; height: 140px; object-fit: cover; border-radius: 6px; background: #ddd; flex-shrink: 0; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+  #detailText { flex: 1; min-width: 0; }
+  #detailTitle { font-family: 'Fraunces', serif; font-size: 18px; color: #2b2a28; margin: 0 0 2px; }
+  body.night #detailTitle { color: #f0ede4; }
+  #detailAuthor { font-size: 13px; color: #7a766c; margin: 0 0 10px; }
+  body.night #detailAuthor { color: #a89f8c; }
+  #detailTags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag { font-size: 10.5px; padding: 3px 9px; border-radius: 999px; background: rgba(92,122,82,0.12); color: #5c7a52; }
+  body.night .tag { background: rgba(201,168,106,0.15); color: #c9a86a; }
+  #detailDesc { font-size: 12.5px; line-height: 1.5; color: #55524a; margin: 0 0 12px; }
+  body.night #detailDesc { color: #cfc9b8; }
+  #detailISBN { font-size: 11px; color: #9a9688; margin-bottom: 12px; }
+  #heartBtn {
+    border: 1px solid rgba(0,0,0,0.12); background: none; border-radius: 999px;
+    padding: 8px 16px; font-size: 13px; cursor: pointer; color: #4a4842;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  body.night #heartBtn { border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
+  #heartBtn.saved { background: #d8555c; border-color: #d8555c; color: #fff; }
+  #closeDetail { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 20px; color: #9a9688; cursor: pointer; }
+
+  /* Saved panel */
+  #savedPanel {
+    position: fixed; top: 0; right: 0; height: 100%; width: 320px; max-width: 90vw;
+    background: rgba(255,255,255,0.98); border-left: 1px solid rgba(0,0,0,0.08);
+    transform: translateX(100%); transition: transform 0.28s ease; z-index: 55;
+    padding: 24px 20px; overflow-y: auto;
+  }
+  body.night #savedPanel { background: rgba(20,19,26,0.98); border-left-color: rgba(255,255,255,0.1); }
+  #savedPanel.open { transform: translateX(0); }
+  #savedPanel h2 { font-family: 'Fraunces', serif; font-size: 18px; color: #2b2a28; margin: 0 0 16px; }
+  body.night #savedPanel h2 { color: #f0ede4; }
+  .savedItem { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer; }
+  body.night .savedItem { border-bottom-color: rgba(255,255,255,0.06); }
+  .savedItem img { width: 34px; height: 50px; object-fit: cover; border-radius: 3px; background: #ddd; }
+  .savedItem span { font-size: 13px; color: #3a3833; }
+  body.night .savedItem span { color: #d8d3c4; }
+  #savedEmpty { font-size: 13px; color: #9a9688; }
+  #closeSaved { position: absolute; top: 20px; right: 18px; background: none; border: none; font-size: 20px; color: #9a9688; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -112,43 +148,67 @@
 <div id="hud">
   <div id="title">The Shelf<span>a walk-in catalog</span></div>
   <div id="topRight">
-    <button id="dimToggle">🌙 <span id="dimLabel">Dim the lights</span></button>
+    <div class="pill" id="dimToggle">🌙 <span id="dimLabel">Dim the lights</span></div>
+    <div class="pill" id="savedToggle">♡ <span id="savedCount">0</span> saved</div>
     <div id="count"><b id="countNum">0</b> books</div>
   </div>
 </div>
 
-<div id="hint">Drag to look around · Scroll to zoom</div>
+<div id="navArrows">
+  <div class="navBtn" id="prevUnit">‹</div>
+  <div class="navBtn" id="nextUnit">›</div>
+</div>
+
+<div id="hint">Tap a book to see it · Drag to look around</div>
 <div id="errorBox"></div>
 <div id="loadingLabel"></div>
 <div id="loadingBar"><div id="loadingFill"></div></div>
+
+<div id="detail">
+  <button id="closeDetail">×</button>
+  <div id="detailInner">
+    <img id="detailCover" src="" alt="" />
+    <div id="detailText">
+      <h3 id="detailTitle"></h3>
+      <p id="detailAuthor"></p>
+      <div id="detailTags"></div>
+      <p id="detailDesc"></p>
+      <div id="detailISBN"></div>
+      <button id="heartBtn">♡ Save for later</button>
+    </div>
+  </div>
+</div>
+
+<div id="savedPanel">
+  <button id="closeSaved">×</button>
+  <h2>Saved for later</h2>
+  <div id="savedList"></div>
+</div>
 
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 // ---------- Palette ----------
-const DAY = {
-  bg: 0xe9e6df, fog: 0xe9e6df, fogDensity: 0.010,
-  floor: 0xd9d5cb, wall: 0xf3f1ea,
-  shelf: 0xf7f5ef, ambient: 0xffffff, ambientI: 1.15,
-  key: 0xfff3de, keyI: 1.6,
-  rim: 0xcfe0c8, rimI: 0.25
-};
-const NIGHT = {
-  bg: 0x14131a, fog: 0x14131a, fogDensity: 0.020,
-  floor: 0x1c1a22, wall: 0x201e26,
-  shelf: 0x26232c, ambient: 0x2a2836, ambientI: 0.35,
-  key: 0xffcf9e, keyI: 1.0,
-  rim: 0x7a5cff, rimI: 0.5
-};
+const DAY = { bg: 0xe9e6df, fog: 0xe9e6df, fogDensity: 0.014, floor: 0xd9d5cb, wall: 0xf3f1ea, shelf: 0xf7f5ef, ambient: 0xffffff, ambientI: 1.15, key: 0xfff3de, keyI: 1.6, rim: 0xcfe0c8, rimI: 0.25 };
+const NIGHT = { bg: 0x14131a, fog: 0x14131a, fogDensity: 0.026, floor: 0x1c1a22, wall: 0x201e26, shelf: 0x26232c, ambient: 0x2a2836, ambientI: 0.35, key: 0xffcf9e, keyI: 1.0, rim: 0x7a5cff, rimI: 0.5 };
 let isNight = false;
+
+// ---------- Layout constants ----------
+const UNIT_ROWS = 3;
+const PER_ROW = 12;
+const PER_UNIT = UNIT_ROWS * PER_ROW;
+const UNIT_WIDTH = 8;
+const UNIT_GAP = 2.6;
+const SHELF_GAP_Y = 1.55;
+function unitCenterX(i) { return i * (UNIT_WIDTH + UNIT_GAP); }
 
 // ---------- Three.js setup ----------
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(DAY.bg);
 scene.fog = new THREE.FogExp2(DAY.fog, DAY.fogDensity);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 300);
-camera.position.set(0, 2.4, 10);
+const camera = new THREE.PerspectiveCamera(48, window.innerWidth/window.innerHeight, 0.1, 300);
+camera.position.set(0, 2.5, 7.5);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -160,115 +220,107 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.minDistance = 2;
-controls.maxDistance = 40;
+controls.maxDistance = 16;
 controls.maxPolarAngle = Math.PI * 0.52;
 controls.target.set(0, 2, 0);
+controls.enablePan = false;
 
-// lighting
 const ambientLight = new THREE.AmbientLight(DAY.ambient, DAY.ambientI);
 scene.add(ambientLight);
-const key = new THREE.SpotLight(DAY.key, DAY.keyI, 40, Math.PI/4, 0.6, 1.2);
-key.position.set(3, 12, 6);
+const key = new THREE.SpotLight(DAY.key, DAY.keyI, 30, Math.PI/4, 0.6, 1.2);
+key.position.set(2, 10, 6);
 key.target.position.set(0, 3, 0);
 scene.add(key, key.target);
 const rim = new THREE.PointLight(DAY.rim, DAY.rimI, 25);
-rim.position.set(-8, 4, -4);
+rim.position.set(-6, 4, -4);
 scene.add(rim);
 
-// back wall
 const wallMat = new THREE.MeshStandardMaterial({ color: DAY.wall, roughness: 0.95 });
-const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), wallMat);
-wall.position.set(0, 10, -2.2);
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 20), wallMat);
+wall.position.set(0, 8, -2.2);
 scene.add(wall);
 
-// floor: light tile look via canvas texture
 function makeTileTexture(dark) {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 512;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = dark ? '#1c1a22' : '#e4e0d5';
-  ctx.fillRect(0,0,512,512);
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
-  ctx.lineWidth = 3;
+  ctx.fillStyle = dark ? '#1c1a22' : '#e4e0d5'; ctx.fillRect(0,0,512,512);
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'; ctx.lineWidth = 3;
   const step = 512/6;
   for (let i=0; i<=6; i++){
     ctx.beginPath(); ctx.moveTo(i*step,0); ctx.lineTo(i*step,512); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0,i*step); ctx.lineTo(512,i*step); ctx.stroke();
   }
   const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(14,14);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(40,3);
   return tex;
 }
 const floorTexDay = makeTileTexture(false);
 const floorTexNight = makeTileTexture(true);
 const floorMat = new THREE.MeshStandardMaterial({ map: floorTexDay, roughness: 0.9 });
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), floorMat);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 20), floorMat);
 floor.rotation.x = -Math.PI/2;
 scene.add(floor);
 
 function makePlant(x, z, scale=1) {
   const group = new THREE.Group();
-  const pot = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.16*scale, 0.13*scale, 0.22*scale, 12),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 })
-  );
-  pot.position.y = 0.11*scale;
-  group.add(pot);
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.16*scale, 0.13*scale, 0.22*scale, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
+  pot.position.y = 0.11*scale; group.add(pot);
   const leafMat = new THREE.MeshStandardMaterial({ color: 0x6f9a5c, roughness: 0.8 });
   for (let i=0;i<6;i++) {
     const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05*scale, 0.32*scale, 5), leafMat);
     const ang = (i/6) * Math.PI * 2;
     leaf.position.set(Math.cos(ang)*0.06*scale, 0.32*scale, Math.sin(ang)*0.06*scale);
-    leaf.rotation.z = Math.cos(ang) * 0.4;
-    leaf.rotation.x = -Math.sin(ang) * 0.4;
+    leaf.rotation.z = Math.cos(ang) * 0.4; leaf.rotation.x = -Math.sin(ang) * 0.4;
     group.add(leaf);
   }
-  group.position.set(x, 0, z);
-  scene.add(group);
-  return group;
+  group.position.set(x, 0, z); scene.add(group); return group;
 }
 
-// shelf group
 const shelfGroup = new THREE.Group();
 scene.add(shelfGroup);
-
-const SHELF_WIDTH = 8;
-const SHELF_GAP_Y = 1.55;
-const PER_ROW = 19;
 const shelfMat = new THREE.MeshStandardMaterial({ color: DAY.shelf, roughness: 0.55 });
 
-function buildShelfBoards(rows) {
-  for (let r = 0; r <= rows; r++) {
-    const board = new THREE.Mesh(new THREE.BoxGeometry(SHELF_WIDTH + 0.3, 0.08, 0.9), shelfMat);
-    board.position.set(0, 0.6 + r * SHELF_GAP_Y, 0);
+function buildShelfUnit(unitIndex) {
+  const cx = unitCenterX(unitIndex);
+  for (let r = 0; r <= UNIT_ROWS; r++) {
+    const board = new THREE.Mesh(new THREE.BoxGeometry(UNIT_WIDTH + 0.3, 0.08, 0.9), shelfMat);
+    board.position.set(cx, 0.6 + r * SHELF_GAP_Y, 0);
     shelfGroup.add(board);
   }
   [-1, 1].forEach(sign => {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, rows * SHELF_GAP_Y + 0.6, 0.9), shelfMat);
-    post.position.set(sign * (SHELF_WIDTH/2 + 0.15), 0.6 + (rows * SHELF_GAP_Y)/2, 0);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, UNIT_ROWS * SHELF_GAP_Y + 0.6, 0.9), shelfMat);
+    post.position.set(cx + sign * (UNIT_WIDTH/2 + 0.15), 0.6 + (UNIT_ROWS * SHELF_GAP_Y)/2, 0);
     shelfGroup.add(post);
   });
 }
 
 const textureLoader = new THREE.TextureLoader();
 textureLoader.crossOrigin = 'anonymous';
-
 const FALLBACK_TONES = [0xd8555c, 0x4a7a8c, 0xe0b84c, 0x6f9a5c, 0x8a6fa8, 0xd98f4c, 0x3f5c76, 0xc76b7a];
 
 function avgColorFromImage(img) {
-  const c = document.createElement('canvas');
-  c.width = 8; c.height = 8;
-  const ctx = c.getContext('2d');
-  ctx.drawImage(img, 0, 0, 8, 8);
+  const c = document.createElement('canvas'); c.width = 8; c.height = 8;
+  const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, 8, 8);
   const data = ctx.getImageData(0,0,8,8).data;
   let r=0,g=0,b=0,n=0;
   for (let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; n++; }
   return new THREE.Color(r/n/255, g/n/255, b/n/255);
 }
 
-function makeBookMesh(book, index, row, col) {
-  const w = 0.3 + (index % 3) * 0.03;
+let allBooks = [];
+let poppedMesh = null;
+let poppedTargetZ = 0;
+
+function bookKey(b) { return (b.title + '|' + (b.author||'')).toLowerCase().trim(); }
+
+function makeBookMesh(book, index) {
+  const unit = Math.floor(index / PER_UNIT);
+  const localIdx = index % PER_UNIT;
+  const row = Math.floor(localIdx / PER_ROW);
+  const col = localIdx % PER_ROW;
+  const spacing = (UNIT_WIDTH - 0.7) / PER_ROW;
+
+  const w = spacing * 0.82;
   const h = 1.25 + (index % 2) * 0.1;
   const d = 0.85;
 
@@ -279,10 +331,11 @@ function makeBookMesh(book, index, row, col) {
   const geo = new THREE.BoxGeometry(w, h, d);
   const mesh = new THREE.Mesh(geo, mats);
 
-  const x = -SHELF_WIDTH/2 + 0.35 + col * 0.37;
+  const cx = unitCenterX(unit);
+  const x = cx - UNIT_WIDTH/2 + 0.35 + col * spacing;
   const y = 0.6 + row * SHELF_GAP_Y + h/2 + 0.06;
   mesh.position.set(x, y, 0);
-  mesh.rotation.y = (Math.random() - 0.5) * 0.03;
+  mesh.userData.baseZ = 0;
   mesh.userData.book = book;
   shelfGroup.add(mesh);
 
@@ -292,14 +345,11 @@ function makeBookMesh(book, index, row, col) {
       const coverMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
       mesh.material[0] = coverMat;
       mesh.material.needsUpdate = true;
-
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         const col2 = avgColorFromImage(img);
-        for (let i=1;i<6;i++){
-          mesh.material[i] = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.6 });
-        }
+        for (let i=1;i<6;i++) mesh.material[i] = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.6 });
         mesh.material.needsUpdate = true;
       };
       img.src = book.cover;
@@ -309,30 +359,50 @@ function makeBookMesh(book, index, row, col) {
 }
 
 function buildShelfFromBooks(books) {
+  allBooks = books;
   while (shelfGroup.children.length) shelfGroup.remove(shelfGroup.children[0]);
-  const rows = Math.max(1, Math.ceil(books.length / PER_ROW));
-  buildShelfBoards(rows);
-  books.forEach((book, i) => {
-    const row = Math.floor(i / PER_ROW);
-    const col = i % PER_ROW;
-    makeBookMesh(book, i, row, col);
-  });
+  const totalUnits = Math.max(1, Math.ceil(books.length / PER_UNIT));
+  for (let u = 0; u < totalUnits; u++) buildShelfUnit(u);
+  books.forEach((book, i) => makeBookMesh(book, i));
   document.getElementById('countNum').textContent = books.length;
+  window._totalUnits = totalUnits;
 }
 
-makePlant(-4.4, -1.4, 1.4);
-makePlant(4.3, -1.8, 1.0);
+makePlant(-3.6, -1.2, 1.1);
+
+// ---------- Unit navigation ----------
+let currentUnit = 0;
+function goToUnit(i) {
+  const total = window._totalUnits || 1;
+  currentUnit = Math.max(0, Math.min(total - 1, i));
+  const cx = unitCenterX(currentUnit);
+  animateCamTo(cx, 2, 7.5, cx, 2, 0);
+}
+let camAnim = null;
+function animateCamTo(px,py,pz,tx,ty,tz) {
+  const startP = camera.position.clone();
+  const startT = controls.target.clone();
+  const endP = new THREE.Vector3(px,py,pz);
+  const endT = new THREE.Vector3(tx,ty,tz);
+  const dur = 600; const t0 = performance.now();
+  if (camAnim) cancelAnimationFrame(camAnim);
+  function step(now) {
+    const t = Math.min(1, (now - t0) / dur);
+    const e = t<0.5 ? 2*t*t : -1+(4-2*t)*t;
+    camera.position.lerpVectors(startP, endP, e);
+    controls.target.lerpVectors(startT, endT, e);
+    if (t < 1) camAnim = requestAnimationFrame(step);
+  }
+  camAnim = requestAnimationFrame(step);
+}
+document.getElementById('prevUnit').onclick = () => goToUnit(currentUnit - 1);
+document.getElementById('nextUnit').onclick = () => goToUnit(currentUnit + 1);
 
 // ---------- Day/Night toggle ----------
-function lerpColor(hexA, hexB, t) {
-  const a = new THREE.Color(hexA), b = new THREE.Color(hexB);
-  return a.clone().lerp(b, t);
-}
+function lerpColor(hexA, hexB, t) { return new THREE.Color(hexA).clone().lerp(new THREE.Color(hexB), t); }
 function applyMode(night) {
-  const from = night ? DAY : NIGHT;
-  const to = night ? NIGHT : DAY;
-  const duration = 700;
-  const start = performance.now();
+  const from = night ? DAY : NIGHT; const to = night ? NIGHT : DAY;
+  const duration = 700; const start = performance.now();
   function step(now) {
     const t = Math.min(1, (now - start) / duration);
     scene.background = lerpColor(from.bg, to.bg, t);
@@ -355,14 +425,102 @@ function applyMode(night) {
   document.getElementById('dimLabel').textContent = night ? 'Brighten up' : 'Dim the lights';
   document.getElementById('dimToggle').firstChild.textContent = night ? '☀️ ' : '🌙 ';
 }
-document.getElementById('dimToggle').onclick = () => {
-  isNight = !isNight;
-  applyMode(isNight);
+document.getElementById('dimToggle').onclick = () => { isNight = !isNight; applyMode(isNight); };
+
+// ---------- Click-to-inspect ----------
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let downPos = null;
+
+renderer.domElement.addEventListener('pointerdown', (e) => { downPos = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downPos) return;
+  const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+  downPos = null;
+  if (dist > 6) return; // was a drag
+  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(shelfGroup.children, false).filter(h => h.object.userData.book);
+  if (hits.length) selectBook(hits[0].object);
+});
+
+function selectBook(mesh) {
+  if (poppedMesh && poppedMesh !== mesh) poppedMesh.userData.baseZ = 0;
+  poppedMesh = mesh;
+  mesh.userData.baseZ = 1.1;
+  openDetail(mesh.userData.book);
+}
+
+// ---------- Saved books (localStorage) ----------
+const SAVED_KEY = 'theshelf_saved_v1';
+function loadSaved() { try { return JSON.parse(localStorage.getItem(SAVED_KEY)) || {}; } catch(e){ return {}; } }
+function persistSaved(obj) { try { localStorage.setItem(SAVED_KEY, JSON.stringify(obj)); } catch(e){} }
+let saved = loadSaved();
+function updateSavedCount() { document.getElementById('savedCount').textContent = Object.keys(saved).length; }
+updateSavedCount();
+
+function renderSavedList() {
+  const list = document.getElementById('savedList');
+  const keys = Object.keys(saved);
+  if (!keys.length) { list.innerHTML = '<div id="savedEmpty">Tap the heart on any book to save it here.</div>'; return; }
+  list.innerHTML = '';
+  keys.forEach(k => {
+    const b = saved[k];
+    const row = document.createElement('div');
+    row.className = 'savedItem';
+    row.innerHTML = `<img src="${b.cover || ''}" /><span>${b.title}${b.author ? ' — ' + b.author : ''}</span>`;
+    row.onclick = () => { openDetail(b); };
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('savedToggle').onclick = () => {
+  renderSavedList();
+  document.getElementById('savedPanel').classList.add('open');
+};
+document.getElementById('closeSaved').onclick = () => document.getElementById('savedPanel').classList.remove('open');
+
+// ---------- Detail panel ----------
+let currentDetailBook = null;
+function openDetail(book) {
+  currentDetailBook = book;
+  document.getElementById('detailCover').src = book.cover || '';
+  document.getElementById('detailTitle').textContent = book.title;
+  document.getElementById('detailAuthor').textContent = book.author || '';
+  const tags = document.getElementById('detailTags');
+  tags.innerHTML = '';
+  (book.genre || []).forEach(g => { const t = document.createElement('span'); t.className='tag'; t.textContent = g; tags.appendChild(t); });
+  if (book.language) { const t = document.createElement('span'); t.className='tag'; t.textContent = book.language; tags.appendChild(t); }
+  document.getElementById('detailDesc').textContent = book.description || '';
+  document.getElementById('detailISBN').textContent = book.isbn ? ('ISBN ' + book.isbn) : '';
+  const key = bookKey(book);
+  const heartBtn = document.getElementById('heartBtn');
+  const isSaved = !!saved[key];
+  heartBtn.textContent = isSaved ? '♥ Saved' : '♡ Save for later';
+  heartBtn.classList.toggle('saved', isSaved);
+  document.getElementById('detail').classList.add('open');
+}
+document.getElementById('closeDetail').onclick = () => {
+  document.getElementById('detail').classList.remove('open');
+  if (poppedMesh) { poppedMesh.userData.baseZ = 0; poppedMesh = null; }
+};
+document.getElementById('heartBtn').onclick = () => {
+  if (!currentDetailBook) return;
+  const key = bookKey(currentDetailBook);
+  const heartBtn = document.getElementById('heartBtn');
+  if (saved[key]) { delete saved[key]; heartBtn.textContent = '♡ Save for later'; heartBtn.classList.remove('saved'); }
+  else { saved[key] = currentDetailBook; heartBtn.textContent = '♥ Saved'; heartBtn.classList.add('saved'); }
+  persistSaved(saved);
+  updateSavedCount();
 };
 
 // ---------- Animation loop ----------
 function animate() {
   requestAnimationFrame(animate);
+  if (poppedMesh) {
+    poppedMesh.position.z += (poppedMesh.userData.baseZ - poppedMesh.position.z) * 0.18;
+  }
   controls.update();
   renderer.render(scene, camera);
 }
@@ -375,19 +533,11 @@ window.addEventListener('resize', () => {
 });
 
 // ---------- Notion + Google Books sync ----------
-const CACHE_KEY = 'theshelf_cover_cache_v1';
-function loadCache() {
-  try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; }
-  catch(e) { return {}; }
-}
-function saveCache(cache) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch(e) {}
-}
+const CACHE_KEY = 'theshelf_cover_cache_v2';
+function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; } catch(e){ return {}; } }
+function saveCache(cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch(e){} }
 const coverCache = loadCache();
-
-function cacheKey(title, author) {
-  return (title + '|' + (author||'')).toLowerCase().trim();
-}
+function cacheKey(title, author) { return (title + '|' + (author||'')).toLowerCase().trim(); }
 
 async function fetchGoogleBooksInfo(title, author) {
   const key = cacheKey(title, author);
@@ -400,17 +550,15 @@ async function fetchGoogleBooksInfo(title, author) {
     const cover = item?.volumeInfo?.imageLinks?.thumbnail?.replace('http://','https://') || null;
     const ids = item?.volumeInfo?.industryIdentifiers || [];
     const isbn13 = ids.find(i => i.type === 'ISBN_13')?.identifier || '';
-    const result = { cover, isbn: isbn13 };
+    const description = (item?.volumeInfo?.description || '').slice(0, 240);
+    const result = { cover, isbn: isbn13, description };
     coverCache[key] = result;
     return result;
-  } catch (e) {
-    return { cover: null, isbn: '' };
-  }
+  } catch (e) { return { cover: null, isbn: '', description: '' }; }
 }
 
 async function runWithConcurrency(items, limit, worker) {
-  let i = 0;
-  let completed = 0;
+  let i = 0; let completed = 0;
   const results = new Array(items.length);
   async function next() {
     while (i < items.length) {
@@ -420,8 +568,7 @@ async function runWithConcurrency(items, limit, worker) {
       updateProgress(completed, items.length);
     }
   }
-  const runners = Array.from({length: limit}, next);
-  await Promise.all(runners);
+  await Promise.all(Array.from({length: limit}, next));
   return results;
 }
 
@@ -449,32 +596,20 @@ async function loadLibrary() {
   try {
     const res = await fetch('/api/books');
     const data = await res.json();
-    if (!res.ok) {
-      showError('Could not load from Notion: ' + (data.error?.message || JSON.stringify(data.error) || 'unknown error'));
-      return;
-    }
+    if (!res.ok) { showError('Could not load from Notion: ' + (data.error?.message || JSON.stringify(data.error) || 'unknown error')); return; }
     notionBooks = data.books || [];
-  } catch (e) {
-    showError('Could not reach /api/books. Is this running on Vercel with the environment variables set?');
-    return;
-  }
+  } catch (e) { showError('Could not reach /api/books. Is this running on Vercel with the environment variables set?'); return; }
 
   document.getElementById('countNum').textContent = notionBooks.length;
 
   const enriched = await runWithConcurrency(notionBooks, 4, async (b) => {
     const info = await fetchGoogleBooksInfo(b.title, b.author);
-    return {
-      title: b.title,
-      author: b.author,
-      genre: b.genre,
-      language: b.language,
-      isbn: info.isbn || b.notionISBN || '',
-      cover: info.cover
-    };
+    return { title: b.title, author: b.author, genre: b.genre, language: b.language, isbn: info.isbn || b.notionISBN || '', cover: info.cover, description: info.description };
   });
 
   saveCache(coverCache);
   buildShelfFromBooks(enriched);
+  goToUnit(0);
 }
 
 loadLibrary();
