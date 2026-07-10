@@ -67,6 +67,8 @@
   #listDetail #nextBook { right: 10px; }
   #detailInner { gap: 12px; }
   #detailTitle { font-size: 16px; }
+  #detail { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: 100%; height: auto; max-height: 34vh; border-left: none; border-top: 1px solid rgba(0,0,0,0.1); transform: translateY(110%); padding: 44px 20px 22px; box-shadow: 0 -8px 24px rgba(0,0,0,0.15); }
+  #detail.open { transform: translateY(0); }
 }
 
   #listDetail { position: absolute; inset: 20px 24px; background: transparent; display: none; flex-direction: column; z-index: 80; }
@@ -691,7 +693,8 @@ function getInspectPosition(distance, lateral) {
   right.crossVectors(dir, camera.up).normalize();
   const pos = camera.position.clone().add(dir.multiplyScalar(distance));
   if (lateral) pos.add(right.multiplyScalar(lateral));
-  pos.y = camera.position.y - 0.15;
+  const isMobile = window.innerWidth < 640;
+  pos.y = camera.position.y + (isMobile ? 0.55 : -0.15);
   return pos;
 }
 function angleToFaceCamera(pos, axis) {
@@ -705,7 +708,9 @@ function handleFrameTap() {
   if (currentInspect) returnBook(currentInspect);
   const mesh = pictureFrameMesh;
   if (frameState === 'shelf') {
-    const inspectPos = getInspectPosition(3.6, -0.8);
+    poppedMesh = mesh;
+    controls.enabled = false;
+    const inspectPos = getInspectPosition(3.6, 0);
     const rotY = angleToFaceCamera(inspectPos, 'z');
     startTween(mesh, inspectPos, rotY, 3.4, 700);
     frameState = 'photo';
@@ -716,6 +721,8 @@ function handleFrameTap() {
   } else {
     startTween(mesh, mesh.userData.basePos, mesh.userData.baseRotY, mesh.userData.baseScale, 550);
     frameState = 'shelf';
+    if (poppedMesh === mesh) poppedMesh = null;
+    controls.enabled = true;
   }
 }
 
@@ -866,7 +873,9 @@ function selectBook(mesh) {
   if (currentInspect) returnBook(currentInspect);
   if (frameState !== 'shelf') { startTween(pictureFrameMesh, pictureFrameMesh.userData.basePos, pictureFrameMesh.userData.baseRotY, pictureFrameMesh.userData.baseScale, 550); frameState = 'shelf'; }
   currentInspect = mesh;
-  const inspectPos = getInspectPosition(3.1, -0.75);
+  poppedMesh = mesh;
+  controls.enabled = false;
+  const inspectPos = getInspectPosition(3.1, 0);
   const rotY = angleToFaceCamera(inspectPos, 'x');
   startTween(mesh, inspectPos, rotY, 1.9, 700);
   openDetail(mesh.userData.book);
@@ -874,18 +883,32 @@ function selectBook(mesh) {
 function returnBook(mesh) {
   startTween(mesh, mesh.userData.basePos, mesh.userData.baseRotY, mesh.userData.baseScale, 550);
   if (currentInspect === mesh) currentInspect = null;
+  if (poppedMesh === mesh) poppedMesh = null;
+  if (!poppedMesh) controls.enabled = true;
   document.getElementById('detail').classList.remove('open');
 }
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let downPos = null;
-renderer.domElement.addEventListener('pointerdown', (e) => { downPos = { x: e.clientX, y: e.clientY }; });
+let lastDragX = 0;
+let poppedMesh = null; // whichever mesh is currently popped out, or null
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  downPos = { x: e.clientX, y: e.clientY };
+  lastDragX = e.clientX;
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (!downPos || !poppedMesh) return;
+  const dx = e.clientX - lastDragX;
+  lastDragX = e.clientX;
+  poppedMesh.rotation.y += dx * 0.012;
+});
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (!downPos) return;
   const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
   downPos = null;
-  if (dist > 6) return;
+  if (dist > 6) return; // was a drag, not a tap
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
