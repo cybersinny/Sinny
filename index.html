@@ -236,30 +236,77 @@ const textureLoader = new THREE.TextureLoader();
 textureLoader.crossOrigin = 'anonymous';
 const FALLBACK_TONES = [0xd8555c, 0x4a7a8c, 0xe0b84c, 0x6f9a5c, 0x8a6fa8, 0xd98f4c, 0x3f5c76, 0xc76b7a];
 
+function fitFontSize(ctx, text, maxWidth, startSize, minSize, weight) {
+  let size = startSize;
+  while (size > minSize) {
+    ctx.font = `${weight} ${size}px Georgia, serif`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+    size -= 2;
+  }
+  return minSize;
+}
+
 function makeSpineTexture(title, author, bgHex) {
+  const W = 128, H = 512;
   const c = document.createElement('canvas');
-  c.width = 128; c.height = 512;
+  c.width = W; c.height = H;
   const ctx = c.getContext('2d');
   const hexStr = '#' + bgHex.toString(16).padStart(6, '0');
   ctx.fillStyle = hexStr;
-  ctx.fillRect(0, 0, 128, 512);
+  ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = 'rgba(255,255,255,0.14)';
-  ctx.fillRect(0, 0, 128, 12);
-  ctx.fillRect(0, 500, 128, 12);
+  ctx.fillRect(0, 0, W, 12);
+  ctx.fillRect(0, H - 12, W, 12);
+
   ctx.save();
-  ctx.translate(64, 256);
+  ctx.translate(W / 2, H / 2);
   ctx.rotate(Math.PI / 2);
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+
+  const maxLineWidth = H - 70;
   ctx.font = '600 30px Georgia, serif';
-  const t = title.length > 42 ? title.slice(0, 40) + '…' : title;
-  ctx.fillText(t, 0, -6);
+  let titleLines, titleSize;
+
+  if (ctx.measureText(title).width <= maxLineWidth) {
+    titleSize = 30;
+    titleLines = [title];
+  } else {
+    const shrunk = fitFontSize(ctx, title, maxLineWidth, 30, 15, '600');
+    ctx.font = `600 ${shrunk}px Georgia, serif`;
+    if (shrunk > 15 || ctx.measureText(title).width <= maxLineWidth) {
+      titleSize = shrunk;
+      titleLines = [title];
+    } else {
+      const words = title.split(' ');
+      const mid = Math.ceil(words.length / 2);
+      const line1 = words.slice(0, mid).join(' ');
+      const line2 = words.slice(mid).join(' ') || '';
+      const size1 = fitFontSize(ctx, line1, maxLineWidth, 24, 12, '600');
+      const size2 = line2 ? fitFontSize(ctx, line2, maxLineWidth, 24, 12, '600') : 24;
+      titleSize = Math.min(size1, size2);
+      titleLines = line2 ? [line1, line2] : [line1];
+    }
+  }
+
+  ctx.font = `600 ${titleSize}px Georgia, serif`;
+  const lineGap = titleSize + 5;
+  const titleBlockHeight = titleLines.length * lineGap;
+  const authorGap = author ? 24 : 0;
+  const blockStart = -(titleBlockHeight + authorGap) / 2 + lineGap / 2;
+  titleLines.forEach((ln, i) => ctx.fillText(ln, 0, blockStart + i * lineGap));
+
   if (author) {
-    ctx.font = '400 20px Georgia, serif';
+    let a = author;
+    const aSize = fitFontSize(ctx, a, maxLineWidth, 19, 11, '400');
+    ctx.font = `400 ${aSize}px Georgia, serif`;
+    if (ctx.measureText(a).width > maxLineWidth) {
+      while (a.length > 4 && ctx.measureText(a + '…').width > maxLineWidth) a = a.slice(0, -1);
+      a = a + '…';
+    }
     ctx.globalAlpha = 0.85;
-    const a = author.length > 30 ? author.slice(0, 28) + '…' : author;
-    ctx.fillText(a, 0, 30);
+    ctx.fillText(a, 0, blockStart + titleBlockHeight - lineGap / 2 + authorGap);
   }
   ctx.restore();
   const tex = new THREE.CanvasTexture(c);
@@ -489,7 +536,7 @@ function openDetail(book) {
   tags.innerHTML = '';
   (book.genre || []).forEach(g => { const t = document.createElement('span'); t.className='tag'; t.textContent = g; tags.appendChild(t); });
   if (book.language) { const t = document.createElement('span'); t.className='tag'; t.textContent = book.language; tags.appendChild(t); }
-  document.getElementById('detailDesc').textContent = book.description || book.fallbackDescription || 'Loading synopsis…';
+  document.getElementById('detailDesc').textContent = book.description || 'Loading synopsis…';
   document.getElementById('detailISBN').textContent = book.isbn ? ('ISBN ' + book.isbn) : '';
   const key = bookKey(book);
   const heartBtn = document.getElementById('heartBtn');
@@ -508,7 +555,7 @@ async function loadSynopsisFor(book) {
   if (synopsisCache[book.pageId]) {
     book.description = synopsisCache[book.pageId];
     book.synopsisLoaded = true;
-    if (currentDetailBook === book) document.getElementById('detailDesc').textContent = book.description || book.fallbackDescription || 'No synopsis found for this book.';
+    if (currentDetailBook === book) document.getElementById('detailDesc').textContent = book.description || 'No synopsis added yet.';
     return;
   }
   try {
@@ -520,10 +567,10 @@ async function loadSynopsisFor(book) {
     synopsisCache[book.pageId] = text;
     persistSynopsisCache();
     if (currentDetailBook === book) {
-      document.getElementById('detailDesc').textContent = text || book.fallbackDescription || 'No synopsis found for this book.';
+      document.getElementById('detailDesc').textContent = text || 'No synopsis added yet.';
     }
   } catch (e) {
-    if (currentDetailBook === book) document.getElementById('detailDesc').textContent = book.fallbackDescription || 'Could not load synopsis.';
+    if (currentDetailBook === book) document.getElementById('detailDesc').textContent = 'Could not load synopsis.';
   }
 }
 document.getElementById('closeDetail').onclick = () => { if (currentInspect) returnBook(currentInspect); else document.getElementById('detail').classList.remove('open'); };
@@ -553,54 +600,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ---------- Notion + Google Books sync ----------
-const CACHE_KEY = 'theshelf_cover_cache_v3';
-function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; } catch(e){ return {}; } }
-function saveCache(cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch(e){} }
-const coverCache = loadCache();
-function cacheKey(title, author) { return (title + '|' + (author||'')).toLowerCase().trim(); }
-
-async function fetchGoogleBooksInfo(title, author) {
-  const key = cacheKey(title, author);
-  if (coverCache[key]) return coverCache[key];
-  await new Promise(r => setTimeout(r, 60 + Math.random() * 120));
-  try {
-    const q = encodeURIComponent(author ? `intitle:${title} inauthor:${author}` : title);
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
-    const data = await res.json();
-    const item = data.items && data.items[0];
-    const cover = item?.volumeInfo?.imageLinks?.thumbnail?.replace('http://','https://') || null;
-    const ids = item?.volumeInfo?.industryIdentifiers || [];
-    const isbn13 = ids.find(i => i.type === 'ISBN_13')?.identifier || '';
-    const description = (item?.volumeInfo?.description || '').slice(0, 280);
-    const result = { cover, isbn: isbn13, description };
-    if (cover || description) coverCache[key] = result;
-    return result;
-  } catch (e) { return { cover: null, isbn: '', description: '' }; }
-}
-
-async function runWithConcurrency(items, limit, worker) {
-  let i = 0; let completed = 0;
-  const results = new Array(items.length);
-  async function next() {
-    while (i < items.length) {
-      const idx = i++;
-      results[idx] = await worker(items[idx], idx);
-      completed++;
-      updateProgress(completed, items.length);
-    }
-  }
-  await Promise.all(Array.from({length: limit}, next));
-  return results;
-}
-function updateProgress(done, total) {
-  const pct = total ? Math.round((done/total)*100) : 0;
-  document.getElementById('loadingFill').style.width = pct + '%';
-  document.getElementById('loadingLabel').textContent = `Loading covers… ${done}/${total}`;
-  if (done >= total) {
-    setTimeout(() => { document.getElementById('loadingLabel').textContent = ''; document.getElementById('loadingFill').style.width = '0%'; }, 1200);
-  }
-}
+// ---------- Notion sync ----------
 function showError(msg) { const box = document.getElementById('errorBox'); box.textContent = msg; box.style.display = 'block'; }
 
 async function loadLibrary() {
@@ -614,19 +614,13 @@ async function loadLibrary() {
   } catch (e) { showError('Could not reach /api/books. Is this running on Vercel with the environment variables set?'); return; }
 
   document.getElementById('countNum').textContent = notionBooks.length;
+  document.getElementById('loadingLabel').textContent = '';
 
-  const enriched = await runWithConcurrency(notionBooks, 3, async (b) => {
-    let cover = b.notionCover || null;
-    let isbn = b.notionISBN || '';
-    let fallbackDescription = '';
-    if (!cover || !isbn) {
-      const info = await fetchGoogleBooksInfo(b.title, b.author);
-      if (!cover) cover = info.cover;
-      if (!isbn) isbn = info.isbn;
-      fallbackDescription = info.description;
-    }
-    return { title: b.title, author: b.author, genre: b.genre, language: b.language, isbn, cover, description: '', fallbackDescription, pageId: b.notionPageId, synopsisLoaded: false };
-  });
+  const enriched = notionBooks.map(b => ({
+    title: b.title, author: b.author, genre: b.genre, language: b.language,
+    isbn: b.notionISBN || '', cover: b.notionCover || null,
+    description: '', pageId: b.notionPageId, synopsisLoaded: false
+  }));
 
   enriched.sort((a, b) => {
     const authorCmp = (a.author || '').toLowerCase().localeCompare((b.author || '').toLowerCase());
@@ -634,7 +628,6 @@ async function loadLibrary() {
     return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
   });
 
-  saveCache(coverCache);
   buildShelfFromBooks(enriched);
   const startX = unitCenterX(0) - UNIT_WIDTH/2 + 2.2;
   camera.position.set(startX, 2.4, 9.5);
