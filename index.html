@@ -633,31 +633,51 @@ function makeFrameTexture(isPoem, photoDataUri) {
   return tex;
 }
 
-function buildPictureFrame() {
-  const w = 0.55, h = 0.72, d = 0.045;
+function placePictureFrame(books) {
+  let anchorIndex = books.findIndex(b => /princes/i.test(b.title));
+  if (anchorIndex === -1) anchorIndex = PER_ROW;
+  const unit = Math.floor(anchorIndex / PER_UNIT);
+  const localIdx = anchorIndex % PER_UNIT;
+  const row = Math.floor(localIdx / PER_ROW);
+  const displayRow = UNIT_ROWS - 1 - row;
+  const col = localIdx % PER_ROW;
+  const spacing = (UNIT_WIDTH - 0.7) / PER_ROW;
+  const cx = unitCenterX(unit);
+
+  const w = spacing * 0.95, h = 0.95, d = 0.045;
   const geo = new THREE.BoxGeometry(w, h, d);
   const sideMat = new THREE.MeshStandardMaterial({ color: 0xc81d4f, roughness: 0.6 });
   const frontMat = new THREE.MeshStandardMaterial({ map: makeFrameTexture(false, COUPLE_PHOTO_URI), roughness: 0.6 });
   const backMat = new THREE.MeshStandardMaterial({ map: makeFrameTexture(true), roughness: 0.6 });
   const mats = [sideMat, sideMat, sideMat, sideMat, frontMat, backMat];
   const mesh = new THREE.Mesh(geo, mats);
-  mesh.position.set(-UNIT_WIDTH/2 + 0.75, UNIT_ROWS * SHELF_GAP_Y + 0.64, 0.15);
+
+  const x = cx - UNIT_WIDTH/2 + 0.35 + (col + 1) * spacing;
+  const y = 0.6 + displayRow * SHELF_GAP_Y + h/2 + 0.06;
+  mesh.position.set(x, y, 0);
+  mesh.userData.basePos = mesh.position.clone();
+  mesh.userData.baseRotY = 0;
+  mesh.userData.baseScale = 1;
   mesh.userData.frame = true;
-  decorGroup.add(mesh);
+  shelfGroup.add(mesh);
   pictureFrameMesh = mesh;
 }
 
-function flipFrame(mesh) {
-  const from = mesh.rotation.y;
-  const to = from + Math.PI;
-  const t0 = performance.now(); const dur = 600;
-  function step(now) {
-    const t = Math.min(1, (now - t0) / dur);
-    const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-    mesh.rotation.y = from + (to - from) * e;
-    if (t < 1) requestAnimationFrame(step);
+let frameState = 'shelf'; // 'shelf' | 'photo' | 'poem'
+function handleFrameTap() {
+  if (currentInspect) returnBook(currentInspect);
+  const mesh = pictureFrameMesh;
+  if (frameState === 'shelf') {
+    const inspectPos = new THREE.Vector3(camera.position.x, 2.15, 5.2);
+    startTween(mesh, inspectPos, mesh.userData.baseRotY, 1.9, 700);
+    frameState = 'photo';
+  } else if (frameState === 'photo') {
+    startTween(mesh, mesh.position.clone(), mesh.userData.baseRotY + Math.PI, 1.9, 500);
+    frameState = 'poem';
+  } else {
+    startTween(mesh, mesh.userData.basePos, mesh.userData.baseRotY, mesh.userData.baseScale, 550);
+    frameState = 'shelf';
   }
-  requestAnimationFrame(step);
 }
 
 const DECOR_MAKERS = [makeBookStackDecor, makeOwlDecor, makeVaseDecor, makeLanternDecor, makeCatDecor];
@@ -667,7 +687,6 @@ function clearDecor() { while (decorGroup.children.length) decorGroup.remove(dec
 
 function scatterDecor(totalUnits, rowBookCounts) {
   clearDecor();
-  buildPictureFrame();
   // one item on top of each bookcase
   for (let u = 0; u < totalUnits; u++) {
     const maker = DECOR_MAKERS[u % DECOR_MAKERS.length];
@@ -701,6 +720,7 @@ function buildShelfFromBooks(books) {
   const totalUnits = Math.max(1, Math.ceil(books.length / PER_UNIT));
   for (let u = 0; u < totalUnits; u++) buildShelfUnit(u);
   books.forEach((book, i) => makeBookMesh(book, i));
+  placePictureFrame(books);
   document.getElementById('countNum').textContent = books.length;
   window._totalUnits = totalUnits;
 
@@ -718,7 +738,7 @@ function buildShelfFromBooks(books) {
   scatterDecor(totalUnits, rowBookCounts);
 }
 
-makePlant(-3.6, -1.2, 1.1);
+makePlant(-UNIT_WIDTH/2 - 1.4, 1.6, 1.3);
 
 // ---------- Free walking movement ----------
 let moveDir = 0;
@@ -805,6 +825,7 @@ let currentInspect = null;
 function selectBook(mesh) {
   if (currentInspect === mesh) { returnBook(mesh); return; }
   if (currentInspect) returnBook(currentInspect);
+  if (frameState !== 'shelf') { startTween(pictureFrameMesh, pictureFrameMesh.userData.basePos, pictureFrameMesh.userData.baseRotY, pictureFrameMesh.userData.baseScale, 550); frameState = 'shelf'; }
   currentInspect = mesh;
   const inspectPos = new THREE.Vector3(camera.position.x, 2.15, 5.2);
   startTween(mesh, inspectPos, -Math.PI/2, 1.9, 700);
@@ -828,11 +849,11 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(shelfGroup.children, false).filter(h => h.object.userData.book);
-  if (hits.length) { selectBook(hits[0].object); return; }
-  if (pictureFrameMesh) {
-    const frameHit = raycaster.intersectObject(pictureFrameMesh, false);
-    if (frameHit.length) flipFrame(pictureFrameMesh);
+  const hits = raycaster.intersectObjects(shelfGroup.children, false).filter(h => h.object.userData.book || h.object.userData.frame);
+  if (hits.length) {
+    const obj = hits[0].object;
+    if (obj.userData.frame) handleFrameTap();
+    else selectBook(obj);
   }
 });
 
