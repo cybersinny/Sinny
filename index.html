@@ -195,8 +195,8 @@
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 // ---------- Palette ----------
-const DAY = { bg: 0xe9e6df, fog: 0xe9e6df, fogDensity: 0.013, floor: 0xd9d5cb, wall: 0xf3f1ea, shelf: 0xf7f5ef, ambient: 0xffffff, ambientI: 1.1, key: 0xfff3de, keyI: 1.2, rim: 0xcfe0c8, rimI: 0.25, shelfLight: 0.85 };
-const NIGHT = { bg: 0x14131a, fog: 0x14131a, fogDensity: 0.024, floor: 0x1c1a22, wall: 0x201e26, shelf: 0x26232c, ambient: 0x2a2836, ambientI: 0.32, key: 0xffcf9e, keyI: 0.7, rim: 0x7a5cff, rimI: 0.5, shelfLight: 0.55 };
+const DAY = { bg: 0xdccbaa, fog: 0xdccbaa, fogDensity: 0.014, floor: 0xc9b183, wall: 0xe4d3af, shelf: 0xceb078, ambient: 0xfff2df, ambientI: 0.72, key: 0xffe4b0, keyI: 0.55, rim: 0xd8c39a, rimI: 0.2, shelfLight: 1.15 };
+const NIGHT = { bg: 0x100e14, fog: 0x100e14, fogDensity: 0.03, floor: 0x181620, wall: 0x1c1926, shelf: 0x24202c, ambient: 0x201d2c, ambientI: 0.18, key: 0xffcf9e, keyI: 0.15, rim: 0x6a4fd6, rimI: 0.35, shelfLight: 1.6 };
 let isNight = false;
 
 // ---------- Layout ----------
@@ -249,8 +249,8 @@ scene.add(wall);
 function makeTileTexture(dark) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 512;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = dark ? '#1c1a22' : '#e4e0d5'; ctx.fillRect(0,0,512,512);
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'; ctx.lineWidth = 3;
+  ctx.fillStyle = dark ? '#181620' : '#c9b183'; ctx.fillRect(0,0,512,512);
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.18)'; ctx.lineWidth = 4;
   const step = 512/6;
   for (let i=0; i<=6; i++){ ctx.beginPath(); ctx.moveTo(i*step,0); ctx.lineTo(i*step,512); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i*step); ctx.lineTo(512,i*step); ctx.stroke(); }
   const tex = new THREE.CanvasTexture(c);
@@ -283,8 +283,9 @@ const shelfGroup = new THREE.Group();
 scene.add(shelfGroup);
 const shelfMat = new THREE.MeshStandardMaterial({ color: DAY.shelf, roughness: 0.55 });
 let shelfLights = [];
+let shelfLightTargets = [];
 
-function clearShelfLights() { shelfLights.forEach(l => scene.remove(l)); shelfLights = []; }
+function clearShelfLights() { shelfLights.forEach(l => scene.remove(l)); shelfLightTargets.forEach(t => scene.remove(t)); shelfLights = []; shelfLightTargets = []; }
 
 function buildShelfUnit(unitIndex) {
   const cx = unitCenterX(unitIndex);
@@ -298,11 +299,16 @@ function buildShelfUnit(unitIndex) {
     post.position.set(cx + sign * (UNIT_WIDTH/2 + 0.15), 0.6 + (UNIT_ROWS * SHELF_GAP_Y)/2, 0);
     shelfGroup.add(post);
   });
-  // one dimming lamp above each shelf
-  const lamp = new THREE.PointLight(DAY.key, DAY.shelfLight, 7, 2);
-  lamp.position.set(cx, UNIT_ROWS * SHELF_GAP_Y + 1.1, 0.7);
+  // one real spotlight above each shelf, aimed down at the books
+  const lamp = new THREE.SpotLight(DAY.key, DAY.shelfLight, 12, Math.PI/3.2, 0.5, 1.4);
+  lamp.position.set(cx, UNIT_ROWS * SHELF_GAP_Y + 1.6, 1.2);
+  const lampTarget = new THREE.Object3D();
+  lampTarget.position.set(cx, 0.6, 0.4);
+  scene.add(lampTarget);
+  lamp.target = lampTarget;
   scene.add(lamp);
   shelfLights.push(lamp);
+  shelfLightTargets.push(lampTarget);
 }
 
 const textureLoader = new THREE.TextureLoader();
@@ -403,6 +409,7 @@ function makeBookMesh(book, index) {
   const unit = Math.floor(index / PER_UNIT);
   const localIdx = index % PER_UNIT;
   const row = Math.floor(localIdx / PER_ROW);
+  const displayRow = UNIT_ROWS - 1 - row;
   const col = localIdx % PER_ROW;
   const spacing = (UNIT_WIDTH - 0.7) / PER_ROW;
 
@@ -421,7 +428,7 @@ function makeBookMesh(book, index) {
 
   const cx = unitCenterX(unit);
   const x = cx - UNIT_WIDTH/2 + 0.35 + col * spacing;
-  const y = 0.6 + row * SHELF_GAP_Y + h/2 + 0.06;
+  const y = 0.6 + displayRow * SHELF_GAP_Y + h/2 + 0.06;
   mesh.position.set(x, y, 0);
   mesh.userData.basePos = mesh.position.clone();
   mesh.userData.baseRotY = 0;
@@ -611,16 +618,19 @@ function jumpToBook(book) {
 
 // ---------- List / search / filter view ----------
 function populateFilterDropdowns() {
-  const genres = new Set(); const languages = new Set();
-  allBooks.forEach(b => { (b.genre || []).forEach(g => genres.add(g)); if (b.language) languages.add(b.language); });
+  const genreCounts = new Map(); const languageCounts = new Map();
+  allBooks.forEach(b => {
+    (b.genre || []).forEach(g => genreCounts.set(g, (genreCounts.get(g) || 0) + 1));
+    if (b.language) languageCounts.set(b.language, (languageCounts.get(b.language) || 0) + 1);
+  });
   const gSel = document.getElementById('genreSelect');
   const lSel = document.getElementById('languageSelect');
-  if (gSel.options.length <= 1) {
-    [...genres].sort().forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = g; gSel.appendChild(o); });
-  }
-  if (lSel.options.length <= 1) {
-    [...languages].sort().forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = l; lSel.appendChild(o); });
-  }
+  const gVal = gSel.value; const lVal = lSel.value;
+  gSel.innerHTML = '<option value="">All genres</option>';
+  [...genreCounts.keys()].sort().forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = `${g} (${genreCounts.get(g)})`; gSel.appendChild(o); });
+  lSel.innerHTML = '<option value="">All languages</option>';
+  [...languageCounts.keys()].sort().forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = `${l} (${languageCounts.get(l)})`; lSel.appendChild(o); });
+  gSel.value = gVal; lSel.value = lVal;
 }
 
 function filteredBooks() {
