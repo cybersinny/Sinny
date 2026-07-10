@@ -644,7 +644,10 @@ function placePictureFrame(books) {
   const spacing = (UNIT_WIDTH - 0.7) / PER_ROW;
   const cx = unitCenterX(unit);
 
-  const w = spacing * 0.95, h = 0.95, d = 0.045;
+  // match the box face to the actual texture aspect ratio (800x1040) so the photo isn't stretched
+  const w = spacing * 1.9;
+  const h = w * (1040 / 800);
+  const d = 0.16;
   const geo = new THREE.BoxGeometry(w, h, d);
   const sideMat = new THREE.MeshStandardMaterial({ color: 0xc81d4f, roughness: 0.6 });
   const frontMat = new THREE.MeshStandardMaterial({ map: makeFrameTexture(false, COUPLE_PHOTO_URI), roughness: 0.6 });
@@ -652,9 +655,9 @@ function placePictureFrame(books) {
   const mats = [sideMat, sideMat, sideMat, sideMat, frontMat, backMat];
   const mesh = new THREE.Mesh(geo, mats);
 
-  const x = cx - UNIT_WIDTH/2 + 0.35 + (col + 1) * spacing;
+  const x = cx - UNIT_WIDTH/2 + 0.35 + (col + 1) * spacing + (w - spacing) / 2;
   const y = 0.6 + displayRow * SHELF_GAP_Y + h/2 + 0.06;
-  mesh.position.set(x, y, 0);
+  mesh.position.set(x, y, 0.42);
   mesh.userData.basePos = mesh.position.clone();
   mesh.userData.baseRotY = 0;
   mesh.userData.baseScale = 1;
