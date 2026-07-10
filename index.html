@@ -455,7 +455,7 @@ function openDetail(book) {
   tags.innerHTML = '';
   (book.genre || []).forEach(g => { const t = document.createElement('span'); t.className='tag'; t.textContent = g; tags.appendChild(t); });
   if (book.language) { const t = document.createElement('span'); t.className='tag'; t.textContent = book.language; tags.appendChild(t); }
-  document.getElementById('detailDesc').textContent = book.description || 'No synopsis found for this edition.';
+  document.getElementById('detailDesc').textContent = book.description || book.fallbackDescription || 'Loading synopsis…';
   document.getElementById('detailISBN').textContent = book.isbn ? ('ISBN ' + book.isbn) : '';
   const key = bookKey(book);
   const heartBtn = document.getElementById('heartBtn');
@@ -463,6 +463,34 @@ function openDetail(book) {
   heartBtn.textContent = isSaved ? '♥ Saved' : '♡ Save for later';
   heartBtn.classList.toggle('saved', isSaved);
   document.getElementById('detail').classList.add('open');
+  loadSynopsisFor(book);
+}
+
+const synopsisCache = (() => { try { return JSON.parse(localStorage.getItem('theshelf_synopsis_v1')) || {}; } catch(e) { return {}; } })();
+function persistSynopsisCache() { try { localStorage.setItem('theshelf_synopsis_v1', JSON.stringify(synopsisCache)); } catch(e) {} }
+
+async function loadSynopsisFor(book) {
+  if (book.synopsisLoaded || !book.pageId) return;
+  if (synopsisCache[book.pageId]) {
+    book.description = synopsisCache[book.pageId];
+    book.synopsisLoaded = true;
+    if (currentDetailBook === book) document.getElementById('detailDesc').textContent = book.description || book.fallbackDescription || 'No synopsis found for this book.';
+    return;
+  }
+  try {
+    const res = await fetch('/api/book-detail?id=' + encodeURIComponent(book.pageId));
+    const data = await res.json();
+    const text = (res.ok && data.synopsis) ? data.synopsis : '';
+    book.description = text;
+    book.synopsisLoaded = true;
+    synopsisCache[book.pageId] = text;
+    persistSynopsisCache();
+    if (currentDetailBook === book) {
+      document.getElementById('detailDesc').textContent = text || book.fallbackDescription || 'No synopsis found for this book.';
+    }
+  } catch (e) {
+    if (currentDetailBook === book) document.getElementById('detailDesc').textContent = book.fallbackDescription || 'Could not load synopsis.';
+  }
 }
 document.getElementById('closeDetail').onclick = () => { if (currentInspect) returnBook(currentInspect); else document.getElementById('detail').classList.remove('open'); };
 document.getElementById('heartBtn').onclick = () => {
@@ -492,7 +520,7 @@ window.addEventListener('resize', () => {
 });
 
 // ---------- Notion + Google Books sync ----------
-const CACHE_KEY = 'theshelf_cover_cache_v2';
+const CACHE_KEY = 'theshelf_cover_cache_v3';
 function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; } catch(e){ return {}; } }
 function saveCache(cache) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch(e){} }
 const coverCache = loadCache();
@@ -511,7 +539,7 @@ async function fetchGoogleBooksInfo(title, author) {
     const isbn13 = ids.find(i => i.type === 'ISBN_13')?.identifier || '';
     const description = (item?.volumeInfo?.description || '').slice(0, 280);
     const result = { cover, isbn: isbn13, description };
-    coverCache[key] = result;
+    if (cover || description) coverCache[key] = result;
     return result;
   } catch (e) { return { cover: null, isbn: '', description: '' }; }
 }
@@ -553,8 +581,16 @@ async function loadLibrary() {
   document.getElementById('countNum').textContent = notionBooks.length;
 
   const enriched = await runWithConcurrency(notionBooks, 4, async (b) => {
-    const info = await fetchGoogleBooksInfo(b.title, b.author);
-    return { title: b.title, author: b.author, genre: b.genre, language: b.language, isbn: info.isbn || b.notionISBN || '', cover: info.cover, description: info.description };
+    let cover = b.notionCover || null;
+    let isbn = b.notionISBN || '';
+    let fallbackDescription = '';
+    if (!cover || !isbn) {
+      const info = await fetchGoogleBooksInfo(b.title, b.author);
+      if (!cover) cover = info.cover;
+      if (!isbn) isbn = info.isbn;
+      fallbackDescription = info.description;
+    }
+    return { title: b.title, author: b.author, genre: b.genre, language: b.language, isbn, cover, description: '', fallbackDescription, pageId: b.notionPageId, synopsisLoaded: false };
   });
 
   enriched.sort((a, b) => {
@@ -565,8 +601,9 @@ async function loadLibrary() {
 
   saveCache(coverCache);
   buildShelfFromBooks(enriched);
-  camera.position.set(unitCenterX(0), 2.4, 9.5);
-  controls.target.set(unitCenterX(0), 2, 0);
+  const startX = unitCenterX(0) - UNIT_WIDTH/2 + 2.2;
+  camera.position.set(startX, 2.4, 9.5);
+  controls.target.set(startX, 2, 0);
 }
 
 loadLibrary();
