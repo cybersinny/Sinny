@@ -16,12 +16,33 @@
   #title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: #2b2a28; transition: color 0.6s ease; }
   body.night #title { color: #f0ede4; }
   #title span { display: block; font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px; color: #8a9c7e; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
-  #topRight { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
-  .pill { background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.08); border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 500; color: #4a4842; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease; }
+  #topRight { display: flex; align-items: center; gap: 10px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; max-width: 70vw; }
+  .pill { background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.08); border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 500; color: #4a4842; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease; white-space: nowrap; }
   body.night .pill { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
   #count { font-size: 12px; color: #7a766c; pointer-events: none; align-self: center; }
   body.night #count { color: #a89f8c; }
   #count b { color: #5c7a52; } body.night #count b { color: #c9a86a; }
+
+  #listView { position: fixed; inset: 0; background: rgba(233,230,223,0.98); z-index: 70; display: none; flex-direction: column; padding: 20px 24px; }
+  body.night #listView { background: rgba(20,19,26,0.98); }
+  #listView.open { display: flex; }
+  #listHeader { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+  #searchInput { flex: 1; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12); border-radius: 999px; padding: 10px 16px; font-size: 14px; color: #2b2a28; }
+  body.night #searchInput { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #f0ede4; }
+  #closeList { background: none; border: none; font-size: 24px; color: #7a766c; cursor: pointer; padding: 0 6px; }
+  #chipRow { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; max-height: 78px; overflow-y: auto; }
+  .chip { font-size: 11px; padding: 5px 12px; border-radius: 999px; background: rgba(0,0,0,0.05); color: #55524a; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
+  body.night .chip { background: rgba(255,255,255,0.06); color: #cfc9b8; }
+  .chip.active { background: #5c7a52; color: #fff; }
+  body.night .chip.active { background: #c9a86a; color: #1a1812; }
+  #listGrid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding-bottom: 20px; }
+  .gridCard { cursor: pointer; display: flex; flex-direction: column; }
+  .gridSpine { width: 100%; aspect-ratio: 2/3; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 8px; text-align: center; }
+  .gridSpine img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+  .gridSpine span { color: #fff; font-size: 11px; font-weight: 600; line-height: 1.3; font-family: 'Fraunces', serif; }
+  .gridCard p { font-size: 10.5px; color: #7a766c; margin: 5px 2px 0; line-height: 1.3; }
+  body.night .gridCard p { color: #a89f8c; }
+  #noResults { grid-column: 1 / -1; text-align: center; color: #9a9688; font-size: 13px; padding: 40px 0; }
 
   #navArrows { position: fixed; top: 50%; width: 100%; display: flex; justify-content: space-between; padding: 0 16px; transform: translateY(-50%); z-index: 8; pointer-events: none; }
   .navBtn { pointer-events: auto; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.08); font-size: 22px; color: #4a4842; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s ease, transform 0.1s ease; }
@@ -80,6 +101,8 @@
 <div id="hud">
   <div id="title">The Shelf<span>a walk-in catalog</span></div>
   <div id="topRight">
+    <div class="pill" id="listToggle">☰ List</div>
+    <div class="pill" id="randomBtn">🎲 Random</div>
     <div class="pill" id="dimToggle">🌙 <span id="dimLabel">Dim the lights</span></div>
     <div class="pill" id="savedToggle">♡ <span id="savedCount">0</span> saved</div>
     <div id="count"><b id="countNum">0</b> books</div>
@@ -116,6 +139,15 @@
   <button id="closeSaved">×</button>
   <h2>Saved for later</h2>
   <div id="savedList"></div>
+</div>
+
+<div id="listView">
+  <div id="listHeader">
+    <input type="text" id="searchInput" placeholder="Search title or author…" />
+    <button id="closeList">×</button>
+  </div>
+  <div id="chipRow"></div>
+  <div id="listGrid"></div>
 </div>
 
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -354,6 +386,8 @@ function makeBookMesh(book, index) {
   mesh.userData.baseRotY = 0;
   mesh.userData.baseScale = 1;
   mesh.userData.book = book;
+  book._mesh = mesh;
+  book._unit = unit;
   shelfGroup.add(mesh);
 
   if (book.cover) {
@@ -524,6 +558,87 @@ function renderSavedList() {
 }
 document.getElementById('savedToggle').onclick = () => { renderSavedList(); document.getElementById('savedPanel').classList.add('open'); };
 document.getElementById('closeSaved').onclick = () => document.getElementById('savedPanel').classList.remove('open');
+
+// ---------- Jump to a specific book (used by search, list, random) ----------
+function jumpToBook(book) {
+  if (!book._mesh) return;
+  const cx = unitCenterX(book._unit);
+  camera.position.set(cx, camera.position.y, camera.position.z);
+  controls.target.set(cx, controls.target.y, 0);
+  selectBook(book._mesh);
+}
+
+// ---------- List / search / filter view ----------
+let activeGenres = new Set();
+let activeLanguages = new Set();
+
+function buildChipRow() {
+  const genres = new Set(); const languages = new Set();
+  allBooks.forEach(b => { (b.genre || []).forEach(g => genres.add(g)); if (b.language) languages.add(b.language); });
+  const row = document.getElementById('chipRow');
+  row.innerHTML = '';
+  [...languages].sort().forEach(l => row.appendChild(makeChip(l, activeLanguages)));
+  [...genres].sort().forEach(g => row.appendChild(makeChip(g, activeGenres)));
+}
+function makeChip(label, set) {
+  const el = document.createElement('div');
+  el.className = 'chip' + (set.has(label) ? ' active' : '');
+  el.textContent = label;
+  el.onclick = () => { set.has(label) ? set.delete(label) : set.add(label); renderList(); };
+  return el;
+}
+
+function filteredBooks() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  return allBooks.filter(b => {
+    if (q && !(b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q))) return false;
+    if (activeGenres.size && !(b.genre || []).some(g => activeGenres.has(g))) return false;
+    if (activeLanguages.size && !activeLanguages.has(b.language)) return false;
+    return true;
+  });
+}
+
+function renderList() {
+  buildChipRow();
+  const grid = document.getElementById('listGrid');
+  const list = filteredBooks();
+  grid.innerHTML = '';
+  if (!list.length) { grid.innerHTML = '<div id="noResults">No books match.</div>'; return; }
+  list.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'gridCard';
+    const tone = '#' + FALLBACK_TONES[Math.abs(hashStr(b.title)) % FALLBACK_TONES.length].toString(16).padStart(6,'0');
+    card.innerHTML = `<div class="gridSpine" style="background:${b.cover ? 'transparent' : tone}">${b.cover ? `<img src="${b.cover}"/>` : `<span>${b.title.length>60?b.title.slice(0,58)+'…':b.title}</span>`}</div><p>${b.title}${b.author ? '<br>'+b.author : ''}</p>`;
+    card.onclick = () => { document.getElementById('listView').classList.remove('open'); jumpToBook(b); };
+    grid.appendChild(card);
+  });
+}
+function hashStr(s) { let h=0; for (let i=0;i<s.length;i++){ h=(h<<5)-h+s.charCodeAt(i); h|=0; } return h; }
+
+document.getElementById('listToggle').onclick = () => { renderList(); document.getElementById('listView').classList.add('open'); };
+document.getElementById('closeList').onclick = () => document.getElementById('listView').classList.remove('open');
+document.getElementById('searchInput').addEventListener('input', renderList);
+
+// ---------- Random book ----------
+document.getElementById('randomBtn').onclick = () => {
+  if (!allBooks.length) return;
+  const pick = allBooks[Math.floor(Math.random() * allBooks.length)];
+  document.getElementById('listView').classList.remove('open');
+  jumpToBook(pick);
+};
+
+// ---------- Keyboard controls ----------
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') moveDir = -1;
+  if (e.key === 'ArrowRight') moveDir = 1;
+  if (e.key === 'Escape') {
+    if (document.getElementById('listView').classList.contains('open')) document.getElementById('listView').classList.remove('open');
+    else if (currentInspect) returnBook(currentInspect);
+  }
+});
+window.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') moveDir = 0;
+});
 
 // ---------- Detail panel ----------
 let currentDetailBook = null;
