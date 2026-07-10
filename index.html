@@ -576,31 +576,31 @@ function wrapLines(ctx, text, maxWidth) {
 }
 
 function makeFrameTexture(isPoem, photoDataUri) {
-  const W = 400, H = 520;
+  const W = 800, H = 1040;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const ctx = c.getContext('2d');
   ctx.save();
   ctx.translate(W/2, H/2); ctx.rotate(Math.PI/4);
-  const stripeW = 22;
+  const stripeW = 44;
   for (let i = -20; i < 20; i++) {
     ctx.fillStyle = i % 2 === 0 ? '#e75480' : '#c81d4f';
-    ctx.fillRect(i*stripeW, -900, stripeW, 1800);
+    ctx.fillRect(i*stripeW, -1800, stripeW, 3600);
   }
   ctx.restore();
-  const pad = 30;
+  const pad = 60;
   ctx.fillStyle = isPoem ? '#f7ecd9' : '#efe6d2';
   ctx.fillRect(pad, pad, W - pad*2, H - pad*2);
 
   ctx.textAlign = 'center';
   if (isPoem) {
     ctx.fillStyle = '#3a3226';
-    ctx.font = "38px 'Caveat', cursive";
+    ctx.font = "76px 'Caveat', cursive";
     const paragraphs = "Te ofrezco mis poemas\nmis cartas\nmi boca que nunca calla\nmis ojos que siempre lloran\n\nte ofrezco nada, pero ojalá a ti te parezca todo.".split('\n');
-    let y = 110;
+    let y = 220;
     paragraphs.forEach(p => {
-      if (p === '') { y += 30; return; }
-      const wrapped = wrapLines(ctx, p, W - pad*2 - 30);
-      wrapped.forEach(line => { ctx.fillText(line, W/2, y); y += 40; });
+      if (p === '') { y += 60; return; }
+      const wrapped = wrapLines(ctx, p, W - pad*2 - 60);
+      wrapped.forEach(line => { ctx.fillText(line, W/2, y); y += 80; });
     });
     const tex = new THREE.CanvasTexture(c);
     tex.encoding = THREE.sRGBEncoding;
@@ -668,11 +668,11 @@ function handleFrameTap() {
   if (currentInspect) returnBook(currentInspect);
   const mesh = pictureFrameMesh;
   if (frameState === 'shelf') {
-    const inspectPos = new THREE.Vector3(camera.position.x, 2.15, 5.2);
-    startTween(mesh, inspectPos, mesh.userData.baseRotY, 1.9, 700);
+    const inspectPos = new THREE.Vector3(camera.position.x, 2.3, 4.6);
+    startTween(mesh, inspectPos, mesh.userData.baseRotY, 3.4, 700);
     frameState = 'photo';
   } else if (frameState === 'photo') {
-    startTween(mesh, mesh.position.clone(), mesh.userData.baseRotY + Math.PI, 1.9, 500);
+    startTween(mesh, mesh.position.clone(), mesh.userData.baseRotY + Math.PI, 3.4, 500);
     frameState = 'poem';
   } else {
     startTween(mesh, mesh.userData.basePos, mesh.userData.baseRotY, mesh.userData.baseScale, 550);
