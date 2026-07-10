@@ -66,7 +66,6 @@
   #listDetail #prevBook { left: 10px; }
   #listDetail #nextBook { right: 10px; }
   #detailInner { gap: 12px; }
-  #detailCover { width: 74px; height: 108px; }
   #detailTitle { font-size: 16px; }
 }
 
@@ -109,27 +108,20 @@
 
   #errorBox { position: fixed; top: 76px; left: 50%; transform: translateX(-50%); background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 14px 20px; max-width: 420px; font-size: 13px; color: #7a3b3b; z-index: 50; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 
-  #detail { position: fixed; left: 0; bottom: 0; width: 100%; background: rgba(255,255,255,0.98); border-top: 1px solid rgba(0,0,0,0.08); transform: translateY(110%); transition: transform 0.32s ease; z-index: 60; padding: 22px 24px 26px; max-height: 60vh; overflow-y: auto; }
-  body.night #detail { background: rgba(20,19,26,0.98); border-top-color: rgba(255,255,255,0.1); }
-  #detail.open { transform: translateY(0); }
-  #detailInner { display: flex; gap: 18px; max-width: 640px; margin: 0 auto; }
-  #detailCover { width: 92px; height: 134px; object-fit: cover; border-radius: 5px; background: #ddd; flex-shrink: 0; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
-  #detailText { flex: 1; min-width: 0; }
-  #detailTitle { font-family: 'Fraunces', serif; font-size: 18px; color: #2b2a28; margin: 0 0 2px; }
-  body.night #detailTitle { color: #f0ede4; }
-  #detailAuthor { font-size: 13px; color: #7a766c; margin: 0 0 10px; }
-  body.night #detailAuthor { color: #a89f8c; }
-  #detailTags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-  .tag { font-size: 10.5px; padding: 3px 9px; border-radius: 999px; background: rgba(92,122,82,0.12); color: #5c7a52; }
-  body.night .tag { background: rgba(201,168,106,0.15); color: #c9a86a; }
-  #synLabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: #b0aa98; margin: 0 0 4px; }
-  #detailDesc { font-size: 12.5px; line-height: 1.5; color: #55524a; margin: 0 0 12px; }
-  body.night #detailDesc { color: #cfc9b8; }
-  #detailISBN { font-size: 11px; color: #9a9688; margin-bottom: 12px; }
-  #heartBtn { border: 1px solid rgba(0,0,0,0.12); background: none; border-radius: 999px; padding: 8px 16px; font-size: 13px; cursor: pointer; color: #4a4842; display: inline-flex; align-items: center; gap: 6px; }
-  body.night #heartBtn { border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
+  #detail { position: fixed; top: 0; right: 0; height: 100%; width: 340px; max-width: 88vw; background: #8FBC8B; border-left: 1px solid rgba(0,0,0,0.1); transform: translateX(110%); transition: transform 0.32s ease; z-index: 60; padding: 60px 26px 26px; overflow-y: auto; box-shadow: -8px 0 24px rgba(0,0,0,0.15); }
+  #detail.open { transform: translateX(0); }
+  #detailInner { display: flex; flex-direction: column; }
+  #detailTitle { font-family: 'Fraunces', serif; font-size: 20px; color: #000; margin: 0 0 4px; }
+  #detailAuthor { font-size: 13.5px; color: #000; margin: 0 0 14px; }
+  #detailTags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .tag { font-size: 10.5px; padding: 3px 9px; border-radius: 999px; display: inline-block; }
+  #detailTags .tag { background: rgba(0,0,0,0.12); color: #000; }
+  #synLabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: #1a1a1a; margin: 0 0 4px; }
+  #detailDesc { font-size: 13px; line-height: 1.6; color: #000; margin: 0 0 14px; }
+  #detailISBN { font-size: 11px; color: #1a1a1a; margin-bottom: 14px; }
+  #heartBtn { border: 1px solid rgba(0,0,0,0.3); background: none; border-radius: 999px; padding: 9px 18px; font-size: 13px; cursor: pointer; color: #000; display: inline-flex; align-items: center; gap: 6px; }
   #heartBtn.saved { background: #d8555c; border-color: #d8555c; color: #fff; }
-  #closeDetail { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 20px; color: #9a9688; cursor: pointer; }
+  #closeDetail { position: absolute; top: 18px; right: 18px; background: rgba(0,0,0,0.1); border: none; font-size: 18px; color: #000; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; }
 
   #savedPanel { position: fixed; top: 0; right: 0; height: 100%; width: 320px; max-width: 90vw; background: rgba(255,255,255,0.98); border-left: 1px solid rgba(0,0,0,0.08); transform: translateX(100%); transition: transform 0.28s ease; z-index: 55; padding: 24px 20px; overflow-y: auto; }
   body.night #savedPanel { background: rgba(20,19,26,0.98); border-left-color: rgba(255,255,255,0.1); }
@@ -171,16 +163,13 @@
 <div id="detail">
   <button id="closeDetail">×</button>
   <div id="detailInner">
-    <img id="detailCover" src="" alt="" />
-    <div id="detailText">
-      <h3 id="detailTitle"></h3>
-      <p id="detailAuthor"></p>
-      <div id="detailTags"></div>
-      <p id="synLabel">Synopsis</p>
-      <p id="detailDesc"></p>
-      <div id="detailISBN"></div>
-      <button id="heartBtn">♡ Save for later</button>
-    </div>
+    <h3 id="detailTitle"></h3>
+    <p id="detailAuthor"></p>
+    <div id="detailTags"></div>
+    <p id="synLabel">Synopsis</p>
+    <p id="detailDesc"></p>
+    <div id="detailISBN"></div>
+    <button id="heartBtn">♡ Save for later</button>
   </div>
 </div>
 
@@ -695,10 +684,13 @@ function placePictureFrame(books) {
 }
 
 let frameState = 'shelf'; // 'shelf' | 'photo' | 'poem'
-function getInspectPosition(distance) {
+function getInspectPosition(distance, lateral) {
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
+  const right = new THREE.Vector3();
+  right.crossVectors(dir, camera.up).normalize();
   const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+  if (lateral) pos.add(right.multiplyScalar(lateral));
   pos.y = camera.position.y - 0.15;
   return pos;
 }
@@ -713,7 +705,7 @@ function handleFrameTap() {
   if (currentInspect) returnBook(currentInspect);
   const mesh = pictureFrameMesh;
   if (frameState === 'shelf') {
-    const inspectPos = getInspectPosition(3.6);
+    const inspectPos = getInspectPosition(3.6, -0.8);
     const rotY = angleToFaceCamera(inspectPos, 'z');
     startTween(mesh, inspectPos, rotY, 3.4, 700);
     frameState = 'photo';
@@ -874,7 +866,7 @@ function selectBook(mesh) {
   if (currentInspect) returnBook(currentInspect);
   if (frameState !== 'shelf') { startTween(pictureFrameMesh, pictureFrameMesh.userData.basePos, pictureFrameMesh.userData.baseRotY, pictureFrameMesh.userData.baseScale, 550); frameState = 'shelf'; }
   currentInspect = mesh;
-  const inspectPos = getInspectPosition(3.1);
+  const inspectPos = getInspectPosition(3.1, -0.75);
   const rotY = angleToFaceCamera(inspectPos, 'x');
   startTween(mesh, inspectPos, rotY, 1.9, 700);
   openDetail(mesh.userData.book);
@@ -1076,7 +1068,6 @@ window.addEventListener('keyup', (e) => {
 let currentDetailBook = null;
 function openDetail(book) {
   currentDetailBook = book;
-  document.getElementById('detailCover').src = book.cover || '';
   document.getElementById('detailTitle').textContent = book.title;
   document.getElementById('detailAuthor').textContent = book.author || '';
   const tags = document.getElementById('detailTags');
