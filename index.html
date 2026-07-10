@@ -42,35 +42,6 @@
   body.night .gridCard p { color: #a89f8c; }
   #noResults { grid-column: 1 / -1; text-align: center; color: #9a9688; font-size: 13px; padding: 40px 0; }
 
-@media (max-width: 640px) {
-  #hud { padding: 14px 14px; }
-  #title { font-size: 17px; }
-  #title span { font-size: 9.5px; }
-  #topRight { max-width: 100%; gap: 6px; }
-  .pill { padding: 6px 10px; font-size: 10.5px; }
-  #count { display: none; }
-  .navBtn { width: 42px; height: 42px; font-size: 18px; }
-  #hint { display: none; }
-  #listView { padding: 14px 14px; }
-  #listHeader { flex-wrap: wrap; }
-  #searchInput { font-size: 13px; padding: 8px 12px; }
-  #filterRow { flex-direction: column; gap: 8px; }
-  #listGrid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
-  .gridCard p { font-size: 9.5px; }
-  #listDetail { inset: 10px; }
-  #listDetailBody { flex-direction: column; gap: 12px; overflow-y: auto; }
-  #listDetailLeft { flex: 0 0 auto; max-height: 42vh; }
-  .listDetailSpine { width: 55%; }
-  #listDetailRight { padding: 18px 18px; }
-  #listDetail .navBtn { top: auto; bottom: 10px; transform: none; }
-  #listDetail #prevBook { left: 10px; }
-  #listDetail #nextBook { right: 10px; }
-  #detailInner { gap: 12px; }
-  #detailTitle { font-size: 16px; }
-  #detail { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: 100%; height: auto; max-height: 34vh; border-left: none; border-top: 1px solid rgba(0,0,0,0.1); transform: translateY(110%); padding: 44px 20px 22px; box-shadow: 0 -8px 24px rgba(0,0,0,0.15); }
-  #detail.open { transform: translateY(0); }
-}
-
   #listDetail { position: absolute; inset: 20px 24px; background: transparent; display: none; flex-direction: column; z-index: 80; }
   #listDetail.open { display: flex; }
   #closeListDetail { align-self: flex-end; background: rgba(0,0,0,0.06); border: none; color: #2b2a28; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 14px; padding: 8px 16px; border-radius: 999px; }
@@ -137,6 +108,48 @@
   body.night .savedItem span { color: #d8d3c4; }
   #savedEmpty { font-size: 13px; color: #9a9688; }
   #closeSaved { position: absolute; top: 20px; right: 18px; background: none; border: none; font-size: 20px; color: #9a9688; cursor: pointer; }
+@media (max-width: 640px) {
+  #hud { padding: 14px 14px; }
+  #title { font-size: 17px; }
+  #title span { font-size: 9.5px; }
+  #topRight { max-width: 100%; gap: 6px; }
+  .pill { padding: 6px 10px; font-size: 10.5px; }
+  #count { display: none; }
+  .navBtn { width: 42px; height: 42px; font-size: 18px; }
+  #hint { display: none; }
+  #listView { padding: 14px 14px; }
+  #listHeader { flex-wrap: wrap; }
+  #searchInput { font-size: 13px; padding: 8px 12px; }
+  #filterRow { flex-direction: column; gap: 8px; }
+  #listGrid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+  .gridCard p { font-size: 9.5px; }
+  #listDetail { inset: 10px; }
+  #listDetailBody { flex-direction: column; gap: 12px; overflow-y: auto; }
+  #listDetailLeft { flex: 0 0 auto; max-height: 42vh; }
+  .listDetailSpine { width: 55%; }
+  #listDetailRight { padding: 18px 18px; }
+  #listDetail .navBtn { top: auto; bottom: 10px; transform: none; }
+  #listDetail #prevBook { left: 10px; }
+  #listDetail #nextBook { right: 10px; }
+  #detailInner { gap: 12px; }
+  #detailTitle { font-size: 16px; }
+  #detail {
+    top: auto !important;
+    right: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 30vh !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    transform: translateY(110%) !important;
+    padding: 40px 20px 20px !important;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.15) !important;
+  }
+  #detail.open { transform: translateY(0) !important; }
+}
 </style>
 </head>
 <body>
@@ -694,7 +707,7 @@ function getInspectPosition(distance, lateral) {
   const pos = camera.position.clone().add(dir.multiplyScalar(distance));
   if (lateral) pos.add(right.multiplyScalar(lateral));
   const isMobile = window.innerWidth < 640;
-  pos.y = camera.position.y + (isMobile ? 0.55 : -0.15);
+  pos.y = camera.position.y + (isMobile ? 0.95 : -0.15);
   return pos;
 }
 function angleToFaceCamera(pos, axis) {
