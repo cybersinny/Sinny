@@ -236,6 +236,37 @@ const textureLoader = new THREE.TextureLoader();
 textureLoader.crossOrigin = 'anonymous';
 const FALLBACK_TONES = [0xd8555c, 0x4a7a8c, 0xe0b84c, 0x6f9a5c, 0x8a6fa8, 0xd98f4c, 0x3f5c76, 0xc76b7a];
 
+function makeSpineTexture(title, author, bgHex) {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 512;
+  const ctx = c.getContext('2d');
+  const hexStr = '#' + bgHex.toString(16).padStart(6, '0');
+  ctx.fillStyle = hexStr;
+  ctx.fillRect(0, 0, 128, 512);
+  ctx.fillStyle = 'rgba(255,255,255,0.14)';
+  ctx.fillRect(0, 0, 128, 12);
+  ctx.fillRect(0, 500, 128, 12);
+  ctx.save();
+  ctx.translate(64, 256);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '600 30px Georgia, serif';
+  const t = title.length > 42 ? title.slice(0, 40) + '…' : title;
+  ctx.fillText(t, 0, -6);
+  if (author) {
+    ctx.font = '400 20px Georgia, serif';
+    ctx.globalAlpha = 0.85;
+    const a = author.length > 30 ? author.slice(0, 28) + '…' : author;
+    ctx.fillText(a, 0, 30);
+  }
+  ctx.restore();
+  const tex = new THREE.CanvasTexture(c);
+  tex.encoding = THREE.sRGBEncoding;
+  return tex;
+}
+
 function avgColorFromImage(img) {
   const c = document.createElement('canvas'); c.width = 8; c.height = 8;
   const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, 8, 8);
@@ -259,9 +290,12 @@ function makeBookMesh(book, index) {
   const h = 1.25 + (index % 2) * 0.1;
   const d = 0.85;
 
-  const fallback = new THREE.Color(FALLBACK_TONES[index % FALLBACK_TONES.length]);
-  const spineMat = new THREE.MeshStandardMaterial({ color: fallback, roughness: 0.6 });
-  const mats = [spineMat.clone(), spineMat.clone(), spineMat.clone(), spineMat.clone(), spineMat.clone(), spineMat.clone()];
+  const fallbackHex = FALLBACK_TONES[index % FALLBACK_TONES.length];
+  const fallback = new THREE.Color(fallbackHex);
+  const plainMat = new THREE.MeshStandardMaterial({ color: fallback, roughness: 0.6 });
+  const spineTex = makeSpineTexture(book.title, book.author || '', fallbackHex);
+  const spineMat = new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.6 });
+  const mats = [spineMat.clone(), plainMat.clone(), plainMat.clone(), plainMat.clone(), spineMat.clone(), plainMat.clone()];
   const geo = new THREE.BoxGeometry(w, h, d);
   const mesh = new THREE.Mesh(geo, mats);
 
@@ -280,12 +314,13 @@ function makeBookMesh(book, index) {
       tex.encoding = THREE.sRGBEncoding;
       const coverMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
       mesh.material[0] = coverMat;
+      mesh.material[4] = coverMat.clone();
       mesh.material.needsUpdate = true;
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         const col2 = avgColorFromImage(img);
-        for (let i=1;i<6;i++) mesh.material[i] = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.6 });
+        [1,2,3,5].forEach(i => { mesh.material[i] = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.6 }); });
         mesh.material.needsUpdate = true;
       };
       img.src = book.cover;
@@ -529,6 +564,7 @@ function cacheKey(title, author) { return (title + '|' + (author||'')).toLowerCa
 async function fetchGoogleBooksInfo(title, author) {
   const key = cacheKey(title, author);
   if (coverCache[key]) return coverCache[key];
+  await new Promise(r => setTimeout(r, 60 + Math.random() * 120));
   try {
     const q = encodeURIComponent(author ? `intitle:${title} inauthor:${author}` : title);
     const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
@@ -580,7 +616,7 @@ async function loadLibrary() {
 
   document.getElementById('countNum').textContent = notionBooks.length;
 
-  const enriched = await runWithConcurrency(notionBooks, 4, async (b) => {
+  const enriched = await runWithConcurrency(notionBooks, 3, async (b) => {
     let cover = b.notionCover || null;
     let isbn = b.notionISBN || '';
     let fallbackDescription = '';
