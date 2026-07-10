@@ -39,12 +39,15 @@ export default async function handler(req, res) {
     const books = results
       .map(page => {
         const props = page.properties;
+        const pageCover = page.cover ? (page.cover.external?.url || page.cover.file?.url || '') : '';
         return {
+          notionPageId: page.id,
           title: getTitle(props['Book name']),
           author: getText(props['Author']),
           genre: getMultiSelect(props['Genre']),
           language: getSelect(props['Language']),
-          notionISBN: getText(props['ISBN'])
+          notionISBN: getText(props['ISBN']),
+          notionCover: getCover(props['Cover']) || pageCover
         };
       })
       .filter(b => b.title);
@@ -74,4 +77,14 @@ function getMultiSelect(prop) {
 function getSelect(prop) {
   if (!prop || !prop.select) return '';
   return prop.select.name;
+}
+function getCover(prop) {
+  if (!prop) return '';
+  if (prop.url) return prop.url;
+  if (prop.files && prop.files.length) {
+    const f = prop.files[0];
+    return f.external?.url || f.file?.url || '';
+  }
+  if (prop.rich_text) return prop.rich_text.map(t => t.plain_text).join('');
+  return '';
 }
