@@ -725,7 +725,7 @@ function handleFrameTap() {
     controls.enabled = false;
     const inspectPos = getInspectPosition(3.6, 0);
     const rotY = angleToFaceCamera(inspectPos, 'z');
-    startTween(mesh, inspectPos, rotY, 3.4, 700);
+    startTween(mesh, inspectPos, rotY, window.innerWidth < 640 ? 2.1 : 3.4, 700);
     frameState = 'photo';
   } else if (frameState === 'photo') {
     const rotY = angleToFaceCamera(mesh.position, 'z') + Math.PI;
@@ -803,7 +803,14 @@ makePlant(-UNIT_WIDTH/2 - 1.4, 1.6, 1.3);
 let moveDir = 0;
 const WALK_SPEED = 0.09;
 function bindHold(el, dir) {
-  const start = (e) => { e.preventDefault(); moveDir = dir; };
+  const start = (e) => {
+    e.preventDefault();
+    if (poppedMesh) {
+      if (currentInspect) goToAdjacentBook(dir);
+      return;
+    }
+    moveDir = dir;
+  };
   const stop = () => { moveDir = 0; };
   el.addEventListener('pointerdown', start);
   el.addEventListener('pointerup', stop);
@@ -812,6 +819,15 @@ function bindHold(el, dir) {
 }
 bindHold(document.getElementById('prevUnit'), -1);
 bindHold(document.getElementById('nextUnit'), 1);
+
+function goToAdjacentBook(dir) {
+  const book = currentInspect.userData.book;
+  const idx = allBooks.indexOf(book);
+  if (idx === -1) return;
+  const nextIdx = Math.max(0, Math.min(allBooks.length - 1, idx + dir));
+  if (nextIdx === idx) return;
+  selectBook(allBooks[nextIdx]._mesh);
+}
 
 function clampWalk() {
   const total = window._totalUnits || 1;
@@ -890,7 +906,7 @@ function selectBook(mesh) {
   controls.enabled = false;
   const inspectPos = getInspectPosition(3.1, 0);
   const rotY = angleToFaceCamera(inspectPos, 'x');
-  startTween(mesh, inspectPos, rotY, 1.9, 700);
+  startTween(mesh, inspectPos, rotY, window.innerWidth < 640 ? 1.25 : 1.9, 700);
   openDetail(mesh.userData.book);
 }
 function returnBook(mesh) {
@@ -1164,7 +1180,7 @@ document.getElementById('heartBtn').onclick = () => {
 // ---------- Animation loop ----------
 function animate(now) {
   requestAnimationFrame(animate);
-  if (moveDir !== 0) { camera.position.x += moveDir * WALK_SPEED; controls.target.x += moveDir * WALK_SPEED; clampWalk(); }
+  if (moveDir !== 0 && !poppedMesh) { camera.position.x += moveDir * WALK_SPEED; controls.target.x += moveDir * WALK_SPEED; clampWalk(); }
   updateTweens(now || performance.now());
   controls.update();
   renderer.render(scene, camera);
