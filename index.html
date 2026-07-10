@@ -30,11 +30,9 @@
   #searchInput { flex: 1; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12); border-radius: 999px; padding: 10px 16px; font-size: 14px; color: #2b2a28; }
   body.night #searchInput { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #f0ede4; }
   #closeList { background: none; border: none; font-size: 24px; color: #7a766c; cursor: pointer; padding: 0 6px; }
-  #chipRow { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; max-height: 78px; overflow-y: auto; }
-  .chip { font-size: 11px; padding: 5px 12px; border-radius: 999px; background: rgba(0,0,0,0.05); color: #55524a; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
-  body.night .chip { background: rgba(255,255,255,0.06); color: #cfc9b8; }
-  .chip.active { background: #5c7a52; color: #fff; }
-  body.night .chip.active { background: #c9a86a; color: #1a1812; }
+  #filterRow { display: flex; gap: 10px; margin-bottom: 14px; }
+  #filterRow select { flex: 1; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12); border-radius: 10px; padding: 9px 12px; font-size: 13px; color: #2b2a28; font-family: 'Inter', sans-serif; }
+  body.night #filterRow select { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #f0ede4; }
   #listGrid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding-bottom: 20px; }
   .gridCard { cursor: pointer; display: flex; flex-direction: column; }
   .gridSpine { width: 100%; aspect-ratio: 2/3; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 8px; text-align: center; }
@@ -43,6 +41,30 @@
   .gridCard p { font-size: 10.5px; color: #7a766c; margin: 5px 2px 0; line-height: 1.3; }
   body.night .gridCard p { color: #a89f8c; }
   #noResults { grid-column: 1 / -1; text-align: center; color: #9a9688; font-size: 13px; padding: 40px 0; }
+
+  #listDetail { position: absolute; inset: 20px 24px; background: transparent; display: none; flex-direction: column; }
+  #listDetail.open { display: flex; }
+  #closeListDetail { align-self: flex-start; background: none; border: none; color: #7a766c; font-size: 14px; cursor: pointer; margin-bottom: 14px; padding: 6px 0; }
+  body.night #closeListDetail { color: #a89f8c; }
+  #listDetailBody { flex: 1; display: flex; gap: 24px; min-height: 0; }
+  #listDetailLeft { flex: 0 0 42%; display: flex; align-items: center; justify-content: center; }
+  #listDetailLeft img { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,0.25); object-fit: cover; }
+  .listDetailSpine { width: 78%; aspect-ratio: 2/3; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; box-shadow: 0 12px 32px rgba(0,0,0,0.2); }
+  .listDetailSpine span { color: #fff; font-family: 'Fraunces', serif; font-size: 18px; line-height: 1.4; }
+  #listDetailRight { flex: 1; background: rgba(255,255,255,0.9); border-radius: 18px; padding: 26px 28px; overflow-y: auto; min-width: 0; }
+  body.night #listDetailRight { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+  #listDetailTitle { font-family: 'Fraunces', serif; font-size: 21px; color: #2b2a28; margin: 0 0 4px; }
+  body.night #listDetailTitle { color: #f0ede4; }
+  #listDetailAuthor { font-size: 13.5px; color: #7a766c; margin: 0 0 12px; }
+  body.night #listDetailAuthor { color: #a89f8c; }
+  #listDetailTags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  #listSynLabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: #b0aa98; margin: 0 0 4px; }
+  #listDetailDesc { font-size: 13px; line-height: 1.6; color: #55524a; margin: 0 0 14px; }
+  body.night #listDetailDesc { color: #cfc9b8; }
+  #listDetailISBN { font-size: 11px; color: #9a9688; margin-bottom: 14px; }
+  #listHeartBtn { border: 1px solid rgba(0,0,0,0.12); background: none; border-radius: 999px; padding: 9px 18px; font-size: 13px; cursor: pointer; color: #4a4842; }
+  body.night #listHeartBtn { border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
+  #listHeartBtn.saved { background: #d8555c; border-color: #d8555c; color: #fff; }
 
   #navArrows { position: fixed; top: 50%; width: 100%; display: flex; justify-content: space-between; padding: 0 16px; transform: translateY(-50%); z-index: 8; pointer-events: none; }
   .navBtn { pointer-events: auto; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.08); font-size: 22px; color: #4a4842; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s ease, transform 0.1s ease; }
@@ -146,8 +168,26 @@
     <input type="text" id="searchInput" placeholder="Search title or author…" />
     <button id="closeList">×</button>
   </div>
-  <div id="chipRow"></div>
+  <div id="filterRow">
+    <select id="genreSelect"><option value="">All genres</option></select>
+    <select id="languageSelect"><option value="">All languages</option></select>
+  </div>
   <div id="listGrid"></div>
+  <div id="listDetail">
+    <button id="closeListDetail">‹ Back to list</button>
+    <div id="listDetailBody">
+      <div id="listDetailLeft"></div>
+      <div id="listDetailRight">
+        <h3 id="listDetailTitle"></h3>
+        <p id="listDetailAuthor"></p>
+        <div id="listDetailTags"></div>
+        <p id="listSynLabel">Synopsis</p>
+        <p id="listDetailDesc"></p>
+        <div id="listDetailISBN"></div>
+        <button id="listHeartBtn">♡ Save for later</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -569,37 +609,33 @@ function jumpToBook(book) {
 }
 
 // ---------- List / search / filter view ----------
-let activeGenres = new Set();
-let activeLanguages = new Set();
-
-function buildChipRow() {
+function populateFilterDropdowns() {
   const genres = new Set(); const languages = new Set();
   allBooks.forEach(b => { (b.genre || []).forEach(g => genres.add(g)); if (b.language) languages.add(b.language); });
-  const row = document.getElementById('chipRow');
-  row.innerHTML = '';
-  [...languages].sort().forEach(l => row.appendChild(makeChip(l, activeLanguages)));
-  [...genres].sort().forEach(g => row.appendChild(makeChip(g, activeGenres)));
-}
-function makeChip(label, set) {
-  const el = document.createElement('div');
-  el.className = 'chip' + (set.has(label) ? ' active' : '');
-  el.textContent = label;
-  el.onclick = () => { set.has(label) ? set.delete(label) : set.add(label); renderList(); };
-  return el;
+  const gSel = document.getElementById('genreSelect');
+  const lSel = document.getElementById('languageSelect');
+  if (gSel.options.length <= 1) {
+    [...genres].sort().forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = g; gSel.appendChild(o); });
+  }
+  if (lSel.options.length <= 1) {
+    [...languages].sort().forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = l; lSel.appendChild(o); });
+  }
 }
 
 function filteredBooks() {
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const genre = document.getElementById('genreSelect').value;
+  const language = document.getElementById('languageSelect').value;
   return allBooks.filter(b => {
     if (q && !(b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q))) return false;
-    if (activeGenres.size && !(b.genre || []).some(g => activeGenres.has(g))) return false;
-    if (activeLanguages.size && !activeLanguages.has(b.language)) return false;
+    if (genre && !(b.genre || []).includes(genre)) return false;
+    if (language && b.language !== language) return false;
     return true;
   });
 }
 
 function renderList() {
-  buildChipRow();
+  populateFilterDropdowns();
   const grid = document.getElementById('listGrid');
   const list = filteredBooks();
   grid.innerHTML = '';
@@ -609,7 +645,7 @@ function renderList() {
     card.className = 'gridCard';
     const tone = '#' + FALLBACK_TONES[Math.abs(hashStr(b.title)) % FALLBACK_TONES.length].toString(16).padStart(6,'0');
     card.innerHTML = `<div class="gridSpine" style="background:${b.cover ? 'transparent' : tone}">${b.cover ? `<img src="${b.cover}"/>` : `<span>${b.title.length>60?b.title.slice(0,58)+'…':b.title}</span>`}</div><p>${b.title}${b.author ? '<br>'+b.author : ''}</p>`;
-    card.onclick = () => { document.getElementById('listView').classList.remove('open'); jumpToBook(b); };
+    card.onclick = () => openListDetail(b);
     grid.appendChild(card);
   });
 }
@@ -618,6 +654,50 @@ function hashStr(s) { let h=0; for (let i=0;i<s.length;i++){ h=(h<<5)-h+s.charCo
 document.getElementById('listToggle').onclick = () => { renderList(); document.getElementById('listView').classList.add('open'); };
 document.getElementById('closeList').onclick = () => document.getElementById('listView').classList.remove('open');
 document.getElementById('searchInput').addEventListener('input', renderList);
+document.getElementById('genreSelect').addEventListener('change', renderList);
+document.getElementById('languageSelect').addEventListener('change', renderList);
+
+// ---------- Split-view book detail (from list) ----------
+let currentListBook = null;
+function openListDetail(book) {
+  currentListBook = book;
+  const left = document.getElementById('listDetailLeft');
+  const tone = FALLBACK_TONES[Math.abs(hashStr(book.title)) % FALLBACK_TONES.length];
+  const toneStr = '#' + tone.toString(16).padStart(6,'0');
+  left.innerHTML = book.cover
+    ? `<img src="${book.cover}" />`
+    : `<div class="listDetailSpine" style="background:${toneStr}"><span>${book.title}</span></div>`;
+
+  document.getElementById('listDetailTitle').textContent = book.title;
+  document.getElementById('listDetailAuthor').textContent = book.author || '';
+  const tags = document.getElementById('listDetailTags');
+  tags.innerHTML = '';
+  (book.genre || []).forEach(g => { const t = document.createElement('span'); t.className = 'tag'; t.textContent = g; tags.appendChild(t); });
+  if (book.language) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = book.language; tags.appendChild(t); }
+  document.getElementById('listDetailDesc').textContent = book.description || 'Loading synopsis…';
+  document.getElementById('listDetailISBN').textContent = book.isbn ? ('ISBN ' + book.isbn) : '';
+
+  const key = bookKey(book);
+  const heartBtn = document.getElementById('listHeartBtn');
+  const isSaved = !!saved[key];
+  heartBtn.textContent = isSaved ? '♥ Saved' : '♡ Save for later';
+  heartBtn.classList.toggle('saved', isSaved);
+
+  document.getElementById('listDetail').classList.add('open');
+  loadSynopsisFor(book, (text) => {
+    if (currentListBook === book) document.getElementById('listDetailDesc').textContent = text || 'No synopsis added yet.';
+  });
+}
+document.getElementById('closeListDetail').onclick = () => document.getElementById('listDetail').classList.remove('open');
+document.getElementById('listHeartBtn').onclick = () => {
+  if (!currentListBook) return;
+  const key = bookKey(currentListBook);
+  const heartBtn = document.getElementById('listHeartBtn');
+  if (saved[key]) { delete saved[key]; heartBtn.textContent = '♡ Save for later'; heartBtn.classList.remove('saved'); }
+  else { saved[key] = currentListBook; heartBtn.textContent = '♥ Saved'; heartBtn.classList.add('saved'); }
+  persistSaved(saved);
+  updateSavedCount();
+};
 
 // ---------- Random book ----------
 document.getElementById('randomBtn').onclick = () => {
@@ -665,12 +745,13 @@ function openDetail(book) {
 const synopsisCache = (() => { try { return JSON.parse(localStorage.getItem('theshelf_synopsis_v1')) || {}; } catch(e) { return {}; } })();
 function persistSynopsisCache() { try { localStorage.setItem('theshelf_synopsis_v1', JSON.stringify(synopsisCache)); } catch(e) {} }
 
-async function loadSynopsisFor(book) {
-  if (book.synopsisLoaded || !book.pageId) return;
+async function loadSynopsisFor(book, onDone) {
+  if (book.synopsisLoaded || !book.pageId) { if (onDone) onDone(book.description); return; }
   if (synopsisCache[book.pageId]) {
     book.description = synopsisCache[book.pageId];
     book.synopsisLoaded = true;
     if (currentDetailBook === book) document.getElementById('detailDesc').textContent = book.description || 'No synopsis added yet.';
+    if (onDone) onDone(book.description);
     return;
   }
   try {
@@ -684,8 +765,10 @@ async function loadSynopsisFor(book) {
     if (currentDetailBook === book) {
       document.getElementById('detailDesc').textContent = text || 'No synopsis added yet.';
     }
+    if (onDone) onDone(text);
   } catch (e) {
     if (currentDetailBook === book) document.getElementById('detailDesc').textContent = 'Could not load synopsis.';
+    if (onDone) onDone('');
   }
 }
 document.getElementById('closeDetail').onclick = () => { if (currentInspect) returnBook(currentInspect); else document.getElementById('detail').classList.remove('open'); };
