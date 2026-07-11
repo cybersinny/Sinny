@@ -170,7 +170,7 @@
   <div class="navBtn" id="nextUnit">›</div>
 </div>
 
-<div id="hint">Hold ‹ › to walk · Drag to look · Tap a book</div>
+<div id="hint">Drag or use ‹ › to walk · Tap a book</div>
 <div id="errorBox"></div>
 <div id="loadingLabel"></div>
 <div id="loadingBar"><div id="loadingFill"></div></div>
@@ -1009,7 +1009,7 @@ let downPos = null;
 let lastDragX = 0;
 let poppedMesh = null; // whichever mesh is currently popped out, or null
 const isMobileDevice = window.innerWidth < 640;
-if (isMobileDevice) controls.enableRotate = false;
+controls.enableRotate = false;
 
 renderer.domElement.addEventListener('pointerdown', (e) => {
   downPos = { x: e.clientX, y: e.clientY };
@@ -1021,7 +1021,7 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   lastDragX = e.clientX;
   if (poppedMesh) {
     poppedMesh.rotation.y += dx * 0.012;
-  } else if (isMobileDevice) {
+  } else {
     camera.position.x -= dx * 0.018;
     controls.target.x -= dx * 0.018;
     clampWalk();
