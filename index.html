@@ -246,7 +246,7 @@ scene.background = new THREE.Color(DAY.bg);
 scene.fog = new THREE.FogExp2(DAY.fog, DAY.fogDensity);
 
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 300);
-camera.position.set(0, 2.4, 9.5);
+camera.position.set(0, 3.6, 9.5);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -260,7 +260,7 @@ controls.dampingFactor = 0.08;
 controls.minDistance = 3;
 controls.maxDistance = 16;
 controls.maxPolarAngle = Math.PI * 0.52;
-controls.target.set(0, 2, 0);
+controls.target.set(0, 4.0, 0);
 controls.enablePan = false;
 
 const ambientLight = new THREE.AmbientLight(DAY.ambient, DAY.ambientI);
@@ -707,7 +707,7 @@ function getInspectPosition(distance, lateral) {
   const pos = camera.position.clone().add(dir.multiplyScalar(distance));
   if (lateral) pos.add(right.multiplyScalar(lateral));
   const isMobile = window.innerWidth < 640;
-  pos.y = camera.position.y + (isMobile ? 0.95 : -0.15);
+  pos.y = camera.position.y + (isMobile ? 0.5 : -0.15);
   return pos;
 }
 function angleToFaceCamera(pos, axis) {
@@ -1223,8 +1223,8 @@ async function loadLibrary() {
 
   buildShelfFromBooks(enriched);
   const startX = unitCenterX(0) - UNIT_WIDTH/2 + 2.2;
-  camera.position.set(startX, 2.4, 9.5);
-  controls.target.set(startX, 2, 0);
+  camera.position.set(startX, 3.6, 9.5);
+  controls.target.set(startX, 4.0, 0);
 }
 
 loadLibrary();
