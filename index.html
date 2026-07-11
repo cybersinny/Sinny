@@ -161,6 +161,7 @@
   <div id="topRight">
     <div class="pill" id="listToggle">☰ List</div>
     <div class="pill" id="randomBtn">🎲 Random</div>
+    <div class="pill" id="shakeEnableBtn" style="display:none;">🫨 Enable Shake</div>
     <div class="pill" id="dimToggle">🌙 <span id="dimLabel">Dim the lights</span></div>
     <div class="pill" id="savedToggle">♡ <span id="savedCount">0</span> saved</div>
     <div id="count"><b id="countNum">0</b> books</div>
@@ -1417,18 +1418,32 @@ function handleMotion(e) {
 }
 
 function enableShakeDetection() {
+  const btn = document.getElementById('shakeEnableBtn');
   if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
     DeviceMotionEvent.requestPermission().then(state => {
-      if (state === 'granted') window.addEventListener('devicemotion', handleMotion);
-    }).catch(() => {});
+      if (state === 'granted') {
+        window.addEventListener('devicemotion', handleMotion);
+        showShakeToast('Shake enabled — give your phone a shake! 📚');
+        btn.style.display = 'none';
+      } else {
+        showShakeToast('Permission denied. Clear this site\'s data in Safari settings to try again.');
+      }
+    }).catch(() => {
+      showShakeToast('Could not request motion access on this browser.');
+    });
   } else if (typeof DeviceMotionEvent !== 'undefined') {
     window.addEventListener('devicemotion', handleMotion);
+    showShakeToast('Shake enabled — give your phone a shake! 📚');
+    btn.style.display = 'none';
+  } else {
+    showShakeToast('This browser doesn\'t support motion detection.');
   }
 }
 
 if (isMobileDevice) {
-  const enableOnce = () => { enableShakeDetection(); window.removeEventListener('pointerdown', enableOnce); };
-  window.addEventListener('pointerdown', enableOnce, { once: true });
+  const btn = document.getElementById('shakeEnableBtn');
+  btn.style.display = 'flex';
+  btn.onclick = enableShakeDetection;
 }
 
 loadLibrary();
