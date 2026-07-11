@@ -925,6 +925,12 @@ function clampWalk() {
   camera.position.x = Math.max(minX, Math.min(maxX, camera.position.x));
   controls.target.x = Math.max(minX, Math.min(maxX, controls.target.x));
 }
+function clampVertical() {
+  const minY = 1.0;
+  const maxY = UNIT_ROWS * SHELF_GAP_Y + 1.2;
+  camera.position.y = Math.max(minY, Math.min(maxY, camera.position.y));
+  controls.target.y = Math.max(minY, Math.min(maxY, controls.target.y));
+}
 
 // ---------- Day/Night toggle ----------
 function lerpColor(hexA, hexB, t) { return new THREE.Color(hexA).clone().lerp(new THREE.Color(hexB), t); }
@@ -1010,6 +1016,7 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let downPos = null;
 let lastDragX = 0;
+let lastDragY = 0;
 let poppedMesh = null; // whichever mesh is currently popped out, or null
 const isMobileDevice = window.innerWidth < 640;
 controls.enableRotate = false;
@@ -1017,16 +1024,22 @@ controls.enableRotate = false;
 renderer.domElement.addEventListener('pointerdown', (e) => {
   downPos = { x: e.clientX, y: e.clientY };
   lastDragX = e.clientX;
+  lastDragY = e.clientY;
 });
 renderer.domElement.addEventListener('pointermove', (e) => {
   if (!downPos) return;
   const dx = e.clientX - lastDragX;
+  const dy = e.clientY - lastDragY;
   lastDragX = e.clientX;
+  lastDragY = e.clientY;
   if (poppedMesh) {
     poppedMesh.rotation.y += dx * 0.012;
   } else {
     camera.position.x -= dx * 0.018;
     controls.target.x -= dx * 0.018;
+    camera.position.y -= dy * 0.014;
+    controls.target.y -= dy * 0.014;
+    clampVertical();
     clampWalk();
   }
 });
