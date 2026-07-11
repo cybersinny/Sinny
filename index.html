@@ -80,6 +80,8 @@
   body.night #loadingLabel { color: #a89f8c; }
 
   #errorBox { position: fixed; top: 76px; left: 50%; transform: translateX(-50%); background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 14px 20px; max-width: 420px; font-size: 13px; color: #7a3b3b; z-index: 50; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  #shakeToast { position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-10px); background: rgba(20,19,26,0.92); color: #f0ede4; border-radius: 999px; padding: 10px 20px; font-size: 13px; z-index: 65; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; }
+  #shakeToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   #detail { position: fixed; top: 0; right: 0; height: 100%; width: 340px; max-width: 88vw; background: #8FBC8B; border-left: 1px solid rgba(0,0,0,0.1); transform: translateX(110%); transition: transform 0.32s ease; z-index: 60; padding: 60px 26px 26px; overflow-y: auto; box-shadow: -8px 0 24px rgba(0,0,0,0.15); }
   #detail.open { transform: translateX(0); }
@@ -172,6 +174,7 @@
 
 <div id="hint">Drag or use ‹ › to walk · Tap a book</div>
 <div id="errorBox"></div>
+<div id="shakeToast"></div>
 <div id="loadingLabel"></div>
 <div id="loadingBar"><div id="loadingFill"></div></div>
 
@@ -1318,6 +1321,101 @@ async function loadLibrary() {
   const startX = unitCenterX(0) - UNIT_WIDTH/2 + 2.2;
   camera.position.set(startX, 3.6, 9.5);
   controls.target.set(startX, 4.0, 0);
+}
+
+// ---------- Shake to drop a random book (mobile) ----------
+let shakeCooldown = false;
+let lastShakeTime = 0;
+let lastAccel = null;
+
+function showShakeToast(msg) {
+  const el = document.getElementById('shakeToast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function wobbleUnitBooks(unit) {
+  const startIdx = unit * PER_UNIT;
+  const endIdx = Math.min(allBooks.length, startIdx + PER_UNIT);
+  for (let i = startIdx; i < endIdx; i++) {
+    const m = allBooks[i]._mesh;
+    if (!m || m === poppedMesh) continue;
+    const base = m.userData.baseRotY;
+    const amt = (Math.random() - 0.5) * 0.3;
+    const start = performance.now() + Math.random() * 120;
+    const duration = 380 + Math.random() * 160;
+    (function shakeOne(mesh) {
+      function step(now) {
+        if (now < start) { requestAnimationFrame(step); return; }
+        const t = Math.min(1, (now - start) / duration);
+        const damp = Math.sin(t * Math.PI * 3) * (1 - t);
+        mesh.rotation.y = base + amt * damp;
+        if (t < 1) requestAnimationFrame(step); else mesh.rotation.y = base;
+      }
+      requestAnimationFrame(step);
+    })(m);
+  }
+}
+
+function triggerShake() {
+  if (!allBooks.length) return;
+  if (currentInspect) returnBook(currentInspect);
+  if (frameState !== 'shelf') {
+    startTween(pictureFrameMesh, pictureFrameMesh.userData.basePos, pictureFrameMesh.userData.baseRotY, pictureFrameMesh.userData.baseScale, 400);
+    frameState = 'shelf';
+  }
+
+  const pick = allBooks[Math.floor(Math.random() * allBooks.length)];
+  const unit = pick._unit;
+  const cx = unitCenterX(unit);
+  camera.position.set(cx, camera.position.y, camera.position.z);
+  controls.target.set(cx, controls.target.y, 0);
+
+  wobbleUnitBooks(unit);
+  showShakeToast('📚 A book tumbled off the shelf — tap it!');
+
+  setTimeout(() => {
+    const mesh = pick._mesh;
+    const floorPos = new THREE.Vector3(
+      mesh.userData.basePos.x + (Math.random() - 0.5) * 0.6,
+      0.14,
+      1.5 + Math.random() * 0.5
+    );
+    startTween(mesh, floorPos, mesh.userData.baseRotY + (Math.random() - 0.5) * 4, 1, 750);
+  }, 260);
+}
+
+function handleMotion(e) {
+  const acc = e.accelerationIncludingGravity || e.acceleration;
+  if (!acc || acc.x === null) return;
+  const now = Date.now();
+  if (lastAccel) {
+    const dx = acc.x - lastAccel.x, dy = acc.y - lastAccel.y, dz = acc.z - lastAccel.z;
+    const delta = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    if (delta > 24 && !shakeCooldown && (now - lastShakeTime) > 2500) {
+      lastShakeTime = now;
+      shakeCooldown = true;
+      triggerShake();
+      setTimeout(() => { shakeCooldown = false; }, 2500);
+    }
+  }
+  lastAccel = { x: acc.x, y: acc.y, z: acc.z };
+}
+
+function enableShakeDetection() {
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission().then(state => {
+      if (state === 'granted') window.addEventListener('devicemotion', handleMotion);
+    }).catch(() => {});
+  } else if (typeof DeviceMotionEvent !== 'undefined') {
+    window.addEventListener('devicemotion', handleMotion);
+  }
+}
+
+if (isMobileDevice) {
+  const enableOnce = () => { enableShakeDetection(); window.removeEventListener('pointerdown', enableOnce); };
+  window.addEventListener('pointerdown', enableOnce, { once: true });
 }
 
 loadLibrary();
