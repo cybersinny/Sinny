@@ -61,6 +61,8 @@
   #listDetailISBN { font-size: 11px; color: #1a1a1a; margin-bottom: 14px; }
   #listHeartBtn { border: 1px solid rgba(0,0,0,0.3); background: none; border-radius: 999px; padding: 9px 18px; font-size: 13px; cursor: pointer; color: #000; }
   #listHeartBtn.saved { background: #d8555c; border-color: #d8555c; color: #fff; }
+  #listTbrRow { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  #listTbrLabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; color: #1a1a1a; opacity: 0.75; margin-right: 2px; }
   #listDetail .navBtn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 81; }
   #listDetail #prevBook { left: 0; }
   #listDetail #nextBook { right: 0; }
@@ -96,6 +98,18 @@
   #detailISBN { font-size: 11px; color: #1a1a1a; margin-bottom: 14px; }
   #heartBtn { border: 1px solid rgba(0,0,0,0.3); background: none; border-radius: 999px; padding: 9px 18px; font-size: 13px; cursor: pointer; color: #000; display: inline-flex; align-items: center; gap: 6px; }
   #heartBtn.saved { background: #d8555c; border-color: #d8555c; color: #fff; }
+  #tbrRow { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  #tbrLabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; color: #000; opacity: 0.6; margin-right: 2px; }
+  .tbrBtn {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 12px;
+    color: #fff; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    background: #6B4A2B; /* Goodreads-esque brown */
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .tbrBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.28); }
+  .tbrBtn.storygraph { background: #F26D4C; /* StoryGraph-esque orange */ }
   #closeDetail { position: absolute; top: 18px; right: 18px; background: rgba(0,0,0,0.1); border: none; font-size: 18px; color: #000; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; }
 
   #savedPanel { position: fixed; top: 0; right: 0; height: 100%; width: 320px; max-width: 90vw; background: rgba(255,255,255,0.98); border-left: 1px solid rgba(0,0,0,0.08); transform: translateX(100%); transition: transform 0.28s ease; z-index: 55; padding: 24px 20px; overflow-y: auto; }
@@ -189,6 +203,11 @@
     <p id="detailDesc"></p>
     <div id="detailISBN"></div>
     <button id="heartBtn">♡ Save for later</button>
+    <div id="tbrRow">
+      <span id="tbrLabel">Add to your TBR</span>
+      <div class="tbrBtn" id="goodreadsBtn" title="Search on Goodreads">GR</div>
+      <div class="tbrBtn storygraph" id="storygraphBtn" title="Search on StoryGraph">SG</div>
+    </div>
   </div>
 </div>
 
@@ -222,6 +241,11 @@
         <p id="listDetailDesc"></p>
         <div id="listDetailISBN"></div>
         <button id="listHeartBtn">♡ Save for later</button>
+        <div id="listTbrRow">
+          <span id="listTbrLabel">Add to your TBR</span>
+          <div class="tbrBtn" id="listGoodreadsBtn" title="Search on Goodreads">GR</div>
+          <div class="tbrBtn storygraph" id="listStorygraphBtn" title="Search on StoryGraph">SG</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1292,6 +1316,19 @@ document.getElementById('heartBtn').onclick = () => {
   persistSaved(saved);
   updateSavedCount();
 };
+
+function openTbrSearch(service, book) {
+  if (!book) return;
+  const q = encodeURIComponent(`${book.title} ${book.author || ''}`.trim());
+  const url = service === 'goodreads'
+    ? `https://www.goodreads.com/search?q=${q}`
+    : `https://app.thestorygraph.com/search?search_term=${q}`;
+  window.open(url, '_blank');
+}
+document.getElementById('goodreadsBtn').onclick = () => openTbrSearch('goodreads', currentDetailBook);
+document.getElementById('storygraphBtn').onclick = () => openTbrSearch('storygraph', currentDetailBook);
+document.getElementById('listGoodreadsBtn').onclick = () => openTbrSearch('goodreads', currentListBook);
+document.getElementById('listStorygraphBtn').onclick = () => openTbrSearch('storygraph', currentListBook);
 
 // ---------- Animation loop ----------
 function animate(now) {
