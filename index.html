@@ -391,7 +391,9 @@ function makeSpineTexture(title, author, bgHex) {
   ctx.save();
   ctx.translate(W / 2, H / 2);
   ctx.rotate(Math.PI / 2);
-  ctx.fillStyle = '#ffffff';
+  const r = (bgHex >> 16) & 255, g = (bgHex >> 8) & 255, b = bgHex & 255;
+  const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
+  ctx.fillStyle = luminance > 0.6 ? '#2a2620' : '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -500,6 +502,9 @@ function makeBookMesh(book, index) {
       img.onload = () => {
         const col2 = avgColorFromImage(img);
         [1,2,3,5].forEach(i => { mesh.material[i] = new THREE.MeshStandardMaterial({ color: col2, roughness: 0.6 }); });
+        const matchedHex = col2.getHex();
+        const matchedSpineTex = makeSpineTexture(book.title, book.author || '', matchedHex);
+        mesh.material[4] = new THREE.MeshStandardMaterial({ map: matchedSpineTex, roughness: 0.6 });
         mesh.material.needsUpdate = true;
       };
       img.src = book.cover;
