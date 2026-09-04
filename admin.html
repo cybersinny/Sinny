@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Backfill Tool</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #14131a; color: #f0ede4; margin: 0; padding: 30px 20px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.sub { color: #9a958a; font-size: 13px; margin-top: 0; }
+  #runBtn { background: #5c7a52; color: #fff; border: none; border-radius: 8px; padding: 12px 22px; font-size: 15px; cursor: pointer; margin: 16px 0; }
+  #runBtn:disabled { opacity: 0.5; cursor: default; }
+  #stats { display: flex; gap: 18px; margin-bottom: 16px; font-size: 13px; flex-wrap: wrap; }
+  #stats div { background: rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 8px; }
+  #bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
+  #barFill { height: 100%; width: 0%; background: #5c7a52; transition: width 0.3s ease; }
+  #log { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 12.5px; max-height: 60vh; overflow-y: auto; white-space: pre-wrap; line-height: 1.6; }
+  #log div.warn { color: #e0b84c; }
+</style>
+</head>
+<body>
+<h1>📚 Notion Backfill Tool</h1>
+<p class="sub">Fills missing covers and language-matched synopses. Skips anything you already added yourself.</p>
+<button id="runBtn">Run Backfill</button>
+<div id="stats">
+  <div>Processed: <b id="statProcessed">0</b></div>
+  <div>Covers added: <b id="statCovers">0</b></div>
+  <div>Synopses added: <b id="statSynopses">0</b></div>
+  <div>Skipped (already filled): <b id="statSkipped">0</b></div>
+</div>
+<div id="bar"><div id="barFill"></div></div>
+<div id="log"></div>
+
+<script>
+const runBtn = document.getElementById('runBtn');
+const logEl = document.getElementById('log');
+const barFill = document.getElementById('barFill');
+let totalProcessed = 0, totalCovers = 0, totalSynopses = 0, totalSkipped = 0;
+
+function appendLog(lines) {
+  lines.forEach(l => {
+    const d = document.createElement('div');
+    if (l.startsWith('✗')) d.className = 'warn';
+    d.textContent = l;
+    logEl.appendChild(d);
+  });
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function updateStats() {
+  document.getElementById('statProcessed').textContent = totalProcessed;
+  document.getElementById('statCovers').textContent = totalCovers;
+  document.getElementById('statSynopses').textContent = totalSynopses;
+  document.getElementById('statSkipped').textContent = totalSkipped;
+}
+
+async function runBackfill() {
+  runBtn.disabled = true;
+  runBtn.textContent = 'Running…';
+  let cursor = '';
+  let batchCount = 0;
+
+  while (true) {
+    batchCount++;
+    barFill.style.width = Math.min(95, batchCount * 3) + '%';
+    try {
+      const url = '/api/backfill' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '');
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!res.ok) {
+        appendLog(['❌ Error: ' + (data.error?.message || JSON.stringify(data.error))]);
+        break;
+      }
+
+      totalProcessed += data.processed;
+      totalCovers += data.coversAdded;
+      totalSynopses += data.synopsesAdded;
+      totalSkipped += data.skipped;
+      updateStats();
+      appendLog(data.log);
+
+      if (!data.hasMore) {
+        appendLog(['🎉 All done!']);
+        barFill.style.width = '100%';
+        break;
+      }
+      cursor = data.nextCursor;
+      await new Promise(r => setTimeout(r, 300));
+    } catch (e) {
+      appendLog(['❌ Network error: ' + e.message + ' — you can click Run Backfill again to resume.']);
+      break;
+    }
+  }
+
+  runBtn.disabled = false;
+  runBtn.textContent = 'Run Backfill Again';
+}
+
+runBtn.onclick = runBackfill;
+</script>
+</body>
+</html>
