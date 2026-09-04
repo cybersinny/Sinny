@@ -66,7 +66,15 @@ async function runBackfill() {
     try {
       const url = '/api/backfill' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : '');
       const res = await fetch(url);
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        appendLog(['❌ Server did not return valid JSON (likely a timeout). Response started with: ' + rawText.slice(0, 150)]);
+        appendLog(['⏸ Click Run Backfill again to resume from where it left off — nothing already saved is lost.']);
+        break;
+      }
 
       if (!res.ok) {
         appendLog(['❌ Error: ' + (data.error?.message || JSON.stringify(data.error))]);
