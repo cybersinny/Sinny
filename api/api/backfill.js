@@ -95,6 +95,10 @@ async function generateSynopsis(title, author, languageName, apiKey) {
   }
 }
 
+export const config = {
+  maxDuration: 60,
+};
+
 export default async function handler(req, res) {
   const token = process.env.NOTION_TOKEN;
   const dbId = process.env.NOTION_DB_ID;
@@ -110,7 +114,7 @@ export default async function handler(req, res) {
   }
 
   const cursor = req.query.cursor || undefined;
-  const batchSize = 6;
+  const batchSize = 2;
 
   const queryBody = { page_size: batchSize };
   if (cursor) queryBody.start_cursor = cursor;
