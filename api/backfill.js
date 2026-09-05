@@ -56,7 +56,9 @@ async function hasPageContent(pageId, token) {
   return (data.results || []).length > 0;
 }
 
-async function findCover(title, author, langCode) {
+const LANG_3LETTER = { es: 'spa', en: 'eng', fr: 'fre', pt: 'por', it: 'ita', de: 'ger' };
+
+async function findCoverGoogleBooks(title, author, langCode) {
   try {
     const q = encodeURIComponent(author ? `intitle:${title} inauthor:${author}` : title);
     const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&langRestrict=${langCode}&maxResults=1`;
@@ -71,6 +73,45 @@ async function findCover(title, author, langCode) {
   } catch (e) {
     return { url: null, reason: 'Google Books fetch threw: ' + e.message };
   }
+}
+
+async function findCoverOpenLibrary(title, author, langCode, isbn) {
+  if (isbn) {
+    try {
+      const cleanIsbn = isbn.replace(/[^0-9Xx]/g, '');
+      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${cleanIsbn}&jscmd=data&format=json`);
+      const data = await res.json();
+      const entry = data[`ISBN:${cleanIsbn}`];
+      if (entry?.cover?.large) return { url: entry.cover.large, reason: null };
+    } catch (e) {
+      // fall through to search
+    }
+  }
+  try {
+    const params = new URLSearchParams({ title, limit: '1' });
+    if (author) params.set('author', author);
+    const lang3 = LANG_3LETTER[langCode];
+    if (lang3) params.set('language', lang3);
+    const res = await fetch(`https://openlibrary.org/search.json?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok) return { url: null, reason: `Open Library HTTP ${res.status}` };
+    const doc = data.docs && data.docs[0];
+    if (!doc) return { url: null, reason: `Open Library found 0 results for "${title}"` };
+    if (!doc.cover_i) return { url: null, reason: `Open Library found "${doc.title}" but it has no cover image` };
+    return { url: `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`, reason: null };
+  } catch (e) {
+    return { url: null, reason: 'Open Library fetch threw: ' + e.message };
+  }
+}
+
+async function findCover(title, author, langCode, isbn) {
+  const google = await findCoverGoogleBooks(title, author, langCode);
+  if (google.url) return { url: google.url, reason: null, source: 'Google Books' };
+
+  const openLib = await findCoverOpenLibrary(title, author, langCode, isbn);
+  if (openLib.url) return { url: openLib.url, reason: null, source: 'Open Library' };
+
+  return { url: null, reason: `Google Books: ${google.reason} | Open Library: ${openLib.reason}` };
 }
 
 async function generateSynopsis(title, author, languageName, apiKey) {
@@ -161,7 +202,7 @@ export default async function handler(req, res) {
     let coverNote = '';
 
     if (needsCover) {
-      const { url: coverUrl, reason } = await findCover(title, author, lang.code);
+      const { url: coverUrl, reason } = await findCover(title, author, lang.code, isbn);
       if (coverUrl) {
         const patchResult = await notionFetch(
           `https://api.notion.com/v1/pages/${page.id}`,
