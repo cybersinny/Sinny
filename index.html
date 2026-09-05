@@ -29,6 +29,13 @@
   body.night .pill { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
   #count { font-size: 12px; color: #7a766c; pointer-events: none; align-self: center; }
   body.night #count { color: #a89f8c; }
+  #shelfSearchWrap { display: flex; align-items: center; gap: 6px; pointer-events: auto; background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.08); border-radius: 999px; padding: 6px 6px 6px 14px; align-self: flex-start; margin-top: 2px; }
+  body.night #shelfSearchWrap { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
+  #shelfSearchInput { border: none; background: none; outline: none; font-size: 13px; width: 150px; color: #2b2a28; }
+  body.night #shelfSearchInput { color: #f0ede4; }
+  #shelfSearchInput::placeholder { color: #9a9688; }
+  #shelfSearchGo { background: #5c7a52; color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  body.night #shelfSearchGo { background: #c9a86a; color: #1a1812; }
   #count b { color: #5c7a52; } body.night #count b { color: #c9a86a; }
 
   #listView { position: fixed; inset: 0; background: rgba(233,230,223,0.98); z-index: 70; display: none; flex-direction: column; padding: 20px 24px; }
@@ -133,7 +140,7 @@
   #savedEmpty { font-size: 13px; color: #9a9688; }
   #closeSaved { position: absolute; top: 20px; right: 18px; background: none; border: none; font-size: 20px; color: #9a9688; cursor: pointer; }
 @media (max-width: 640px) {
-  #hud { padding: 14px 14px; }
+  #hud { padding: 14px 14px; flex-wrap: wrap; row-gap: 10px; }
   #title { font-size: 17px; }
   #title span { font-size: 9.5px; }
   #topRight { max-width: 100%; gap: 6px; }
@@ -141,6 +148,8 @@
   #count { display: none; }
   .navBtn { width: 42px; height: 42px; font-size: 18px; }
   #hint { display: none; }
+  #shelfSearchWrap { order: 3; width: 100%; margin-top: 0; }
+  #shelfSearchInput { flex: 1; width: auto; }
   #listView { padding: 14px 14px; }
   #listHeader { flex-wrap: wrap; }
   #searchInput { font-size: 13px; padding: 8px 12px; }
@@ -180,6 +189,10 @@
 
 <div id="hud">
   <div id="title">The Shelf<span>a walk-in catalog</span></div>
+  <div id="shelfSearchWrap">
+    <input type="text" id="shelfSearchInput" placeholder="Find a book…" />
+    <div id="shelfSearchGo">Go</div>
+  </div>
   <div id="topRight">
     <div class="pill" id="listToggle">☰ List</div>
     <div class="pill" id="randomBtn">🎲 Random</div>
@@ -1132,6 +1145,29 @@ function jumpToBook(book) {
   controls.target.set(cx, controls.target.y, 0);
   selectBook(book._mesh);
 }
+
+function runShelfSearch() {
+  const input = document.getElementById('shelfSearchInput');
+  const q = input.value.trim().toLowerCase();
+  if (!q) return;
+  document.getElementById('listView').classList.remove('open');
+
+  const exact = allBooks.filter(b => b.title.toLowerCase() === q);
+  const matches = exact.length ? exact : allBooks.filter(b => b.title.toLowerCase().includes(q));
+
+  if (!matches.length) {
+    showShakeToast(`No book found matching "${input.value.trim()}"`);
+    return;
+  }
+  const pick = matches[Math.floor(Math.random() * matches.length)];
+  jumpToBook(pick);
+  input.value = '';
+  input.blur();
+}
+document.getElementById('shelfSearchGo').onclick = runShelfSearch;
+document.getElementById('shelfSearchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runShelfSearch();
+});
 
 // ---------- List / search / filter view ----------
 function populateFilterDropdowns() {
