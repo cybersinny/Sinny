@@ -56,16 +56,37 @@ async function hasPageContent(pageId, token) {
   return (data.results || []).length > 0;
 }
 
-async function findCover(title, author, langCode) {
+const LANG_3LETTER = { es: 'spa', en: 'eng', fr: 'fre', pt: 'por', it: 'ita', de: 'ger' };
+
+async function findCover(title, author, langCode, isbn) {
+  // 1. Try ISBN lookup first - most precise
+  if (isbn) {
+    try {
+      const cleanIsbn = isbn.replace(/[^0-9Xx]/g, '');
+      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${cleanIsbn}&jscmd=data&format=json`);
+      const data = await res.json();
+      const entry = data[`ISBN:${cleanIsbn}`];
+      if (entry?.cover?.large) return { url: entry.cover.large, reason: null };
+    } catch (e) {
+      // fall through to search
+    }
+  }
+
+  // 2. Fall back to title/author search
   try {
-    const q = encodeURIComponent(author ? `intitle:${title} inauthor:${author}` : title);
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&langRestrict=${langCode}&maxResults=1`;
-    const res = await fetch(url);
+    const params = new URLSearchParams({ title, limit: '1' });
+    if (author) params.set('author', author);
+    const lang3 = LANG_3LETTER[langCode];
+    if (lang3) params.set('language', lang3);
+    const res = await fetch(`https://openlibrary.org/search.json?${params.toString()}`);
     const data = await res.json();
-    const item = data.items && data.items[0];
-    return item?.volumeInfo?.imageLinks?.thumbnail?.replace('http://', 'https://') || null;
+    if (!res.ok) return { url: null, reason: `Open Library HTTP ${res.status}` };
+    const doc = data.docs && data.docs[0];
+    if (!doc) return { url: null, reason: `Open Library found 0 results for "${title}"` };
+    if (!doc.cover_i) return { url: null, reason: `Open Library found "${doc.title}" but it has no cover image` };
+    return { url: `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`, reason: null };
   } catch (e) {
-    return null;
+    return { url: null, reason: 'Open Library fetch threw: ' + e.message };
   }
 }
 
@@ -139,6 +160,7 @@ export default async function handler(req, res) {
     const title = getTitle(props['Book name']);
     const author = getText(props['Author']);
     const langRaw = getSelect(props['Language']);
+    const isbn = getText(props['ISBN']);
     const lang = resolveLanguage(langRaw);
 
     if (!title) continue;
@@ -153,16 +175,23 @@ export default async function handler(req, res) {
     }
 
     let didSomething = false;
+    let coverNote = '';
 
     if (needsCover) {
-      const coverUrl = await findCover(title, author, lang.code);
+      const { url: coverUrl, reason } = await findCover(title, author, lang.code, isbn);
       if (coverUrl) {
         const patchResult = await notionFetch(
           `https://api.notion.com/v1/pages/${page.id}`,
           token,
           { method: 'PATCH', body: JSON.stringify({ cover: { type: 'external', external: { url: coverUrl } } }) }
         );
-        if (patchResult.ok) { coversAdded++; didSomething = true; }
+        if (patchResult.ok) {
+          coversAdded++; didSomething = true;
+        } else {
+          coverNote = ` [cover write failed: ${patchResult.data?.message || JSON.stringify(patchResult.data)}]`;
+        }
+      } else {
+        coverNote = ` [cover skipped: ${reason}]`;
       }
     }
 
@@ -187,7 +216,7 @@ export default async function handler(req, res) {
       }
     }
 
-    log.push(`${didSomething ? '✓' : '✗'} ${title} (${lang.name})${needsCover ? ' [cover]' : ''}${needsSynopsis ? ' [synopsis]' : ''}`);
+    log.push(`${didSomething ? '✓' : '✗'} ${title} (${lang.name})${needsSynopsis ? ' [synopsis]' : ''}${coverNote}`);
   }
 
   res.status(200).json({
