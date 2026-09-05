@@ -56,37 +56,20 @@ async function hasPageContent(pageId, token) {
   return (data.results || []).length > 0;
 }
 
-const LANG_3LETTER = { es: 'spa', en: 'eng', fr: 'fre', pt: 'por', it: 'ita', de: 'ger' };
-
-async function findCover(title, author, langCode, isbn) {
-  // 1. Try ISBN lookup first - most precise
-  if (isbn) {
-    try {
-      const cleanIsbn = isbn.replace(/[^0-9Xx]/g, '');
-      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${cleanIsbn}&jscmd=data&format=json`);
-      const data = await res.json();
-      const entry = data[`ISBN:${cleanIsbn}`];
-      if (entry?.cover?.large) return { url: entry.cover.large, reason: null };
-    } catch (e) {
-      // fall through to search
-    }
-  }
-
-  // 2. Fall back to title/author search
+async function findCover(title, author, langCode) {
   try {
-    const params = new URLSearchParams({ title, limit: '1' });
-    if (author) params.set('author', author);
-    const lang3 = LANG_3LETTER[langCode];
-    if (lang3) params.set('language', lang3);
-    const res = await fetch(`https://openlibrary.org/search.json?${params.toString()}`);
+    const q = encodeURIComponent(author ? `intitle:${title} inauthor:${author}` : title);
+    const url = `https://www.googleapis.com/books/v1/volumes?q=${q}&langRestrict=${langCode}&maxResults=1`;
+    const res = await fetch(url);
     const data = await res.json();
-    if (!res.ok) return { url: null, reason: `Open Library HTTP ${res.status}` };
-    const doc = data.docs && data.docs[0];
-    if (!doc) return { url: null, reason: `Open Library found 0 results for "${title}"` };
-    if (!doc.cover_i) return { url: null, reason: `Open Library found "${doc.title}" but it has no cover image` };
-    return { url: `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`, reason: null };
+    if (!res.ok) return { url: null, reason: `Google Books HTTP ${res.status}: ${data.error?.message || 'unknown'}` };
+    const item = data.items && data.items[0];
+    if (!item) return { url: null, reason: `Google Books found 0 results for "${title}"` };
+    const thumb = item?.volumeInfo?.imageLinks?.thumbnail?.replace('http://', 'https://');
+    if (!thumb) return { url: null, reason: `Google Books found "${item.volumeInfo?.title}" but it has no cover image` };
+    return { url: thumb, reason: null };
   } catch (e) {
-    return { url: null, reason: 'Open Library fetch threw: ' + e.message };
+    return { url: null, reason: 'Google Books fetch threw: ' + e.message };
   }
 }
 
@@ -178,7 +161,7 @@ export default async function handler(req, res) {
     let coverNote = '';
 
     if (needsCover) {
-      const { url: coverUrl, reason } = await findCover(title, author, lang.code, isbn);
+      const { url: coverUrl, reason } = await findCover(title, author, lang.code);
       if (coverUrl) {
         const patchResult = await notionFetch(
           `https://api.notion.com/v1/pages/${page.id}`,
