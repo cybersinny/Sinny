@@ -29,9 +29,9 @@
   body.night .pill { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #e6e1d3; }
   #count { font-size: 12px; color: #7a766c; pointer-events: none; align-self: center; }
   body.night #count { color: #a89f8c; }
-  #shelfSearchWrap { display: flex; align-items: center; gap: 6px; pointer-events: auto; background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.08); border-radius: 999px; padding: 6px 6px 6px 14px; align-self: flex-start; margin-top: 2px; }
+  #shelfSearchWrap { display: flex; align-items: center; gap: 6px; pointer-events: auto; background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.08); border-radius: 999px; padding: 6px 6px 6px 14px; margin-top: 10px; width: fit-content; }
   body.night #shelfSearchWrap { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
-  #shelfSearchInput { border: none; background: none; outline: none; font-size: 13px; width: 150px; color: #2b2a28; }
+  #shelfSearchInput { border: none; background: none; outline: none; font-size: 13px; width: 170px; color: #2b2a28; }
   body.night #shelfSearchInput { color: #f0ede4; }
   #shelfSearchInput::placeholder { color: #9a9688; }
   #shelfSearchGo { background: #5c7a52; color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 12px; cursor: pointer; white-space: nowrap; }
@@ -148,8 +148,8 @@
   #count { display: none; }
   .navBtn { width: 42px; height: 42px; font-size: 18px; }
   #hint { display: none; }
-  #shelfSearchWrap { order: 3; width: 100%; margin-top: 0; }
-  #shelfSearchInput { flex: 1; width: auto; }
+  #shelfSearchWrap { margin-top: 8px; }
+  #shelfSearchInput { width: 130px; }
   #listView { padding: 14px 14px; }
   #listHeader { flex-wrap: wrap; }
   #searchInput { font-size: 13px; padding: 8px 12px; }
@@ -188,10 +188,11 @@
 <body>
 
 <div id="hud">
-  <div id="title">The Shelf<span>a walk-in catalog</span></div>
-  <div id="shelfSearchWrap">
-    <input type="text" id="shelfSearchInput" placeholder="Find a book…" />
-    <div id="shelfSearchGo">Go</div>
+  <div id="title">The Shelf<span>a walk-in catalog</span>
+    <div id="shelfSearchWrap">
+      <input type="text" id="shelfSearchInput" placeholder="Find a book or author…" />
+      <div id="shelfSearchGo">Go</div>
+    </div>
   </div>
   <div id="topRight">
     <div class="pill" id="listToggle">☰ List</div>
@@ -1152,8 +1153,13 @@ function runShelfSearch() {
   if (!q) return;
   document.getElementById('listView').classList.remove('open');
 
-  const exact = allBooks.filter(b => b.title.toLowerCase() === q);
-  const matches = exact.length ? exact : allBooks.filter(b => b.title.toLowerCase().includes(q));
+  const exactTitle = allBooks.filter(b => b.title.toLowerCase() === q);
+  let matches = exactTitle;
+  if (!matches.length) {
+    matches = allBooks.filter(b =>
+      b.title.toLowerCase().includes(q) || (b.author || '').toLowerCase().includes(q)
+    );
+  }
 
   if (!matches.length) {
     showShakeToast(`No book found matching "${input.value.trim()}"`);
