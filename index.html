@@ -313,7 +313,7 @@ updateCameraFov();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 640 ? 1.5 : 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
 
@@ -423,7 +423,7 @@ function fitFontSize(ctx, text, maxWidth, startSize, minSize, weight) {
 }
 
 function makeSpineTexture(title, author, bgHex) {
-  const W = 128, H = 512;
+  const W = 96, H = 384;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const ctx = c.getContext('2d');
@@ -489,6 +489,9 @@ function makeSpineTexture(title, author, bgHex) {
   ctx.restore();
   const tex = new THREE.CanvasTexture(c);
   tex.encoding = THREE.sRGBEncoding;
+  tex.generateMipmaps = false;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
   return tex;
 }
 
@@ -540,6 +543,9 @@ function makeBookMesh(book, index) {
   if (book.cover) {
     textureLoader.load(book.cover, (tex) => {
       tex.encoding = THREE.sRGBEncoding;
+      tex.generateMipmaps = false;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
       const coverMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
       mesh.material[0] = coverMat;
       mesh.material.needsUpdate = true;
